@@ -159,7 +159,7 @@ main() {
   if [[ -n "${STATIC_VERSION}" ]] || [[ "${REPRODUCIBLE_BUILD}" = 1 ]]; then
     echo '#define BUILDER "reproducible@build"'
   else
-    echo "#define BUILDER \"${USER}@$(hostname)\""
+    echo "#define BUILDER \"MrChromebox\""
   fi
 
   if [[ -n "${STATIC_VERSION}" ]]; then
