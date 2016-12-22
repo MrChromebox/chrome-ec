@@ -140,7 +140,7 @@ main() {
   if [ "$REPRODUCIBLE_BUILD" = 1 ]; then
     echo '#define BUILDER "reproducible@build"'
   else
-    echo "#define BUILDER \"${USER}@`hostname`\""
+    echo "#define BUILDER \"MrChromebox\""
   fi
 
   if [ -n "$global_dirty" ]; then
