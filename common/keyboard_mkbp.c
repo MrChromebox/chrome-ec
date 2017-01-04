@@ -188,6 +188,9 @@ void keyboard_send_battery_key(void)
 		keyboard_fifo_add(state);
 }
 
+void clear_typematic_key(void)
+{ }
+
 /*****************************************************************************/
 /* Host commands */
 
