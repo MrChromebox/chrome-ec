@@ -424,11 +424,11 @@ static void keystroke_enable(int enable)
 
 static void keyboard_enable(int enable)
 {
-	if (!keyboard_enabled && enable)
+	if (!keyboard_enabled && enable) {
 		CPRINTS("KB enable");
-	else if (keyboard_enabled && !enable)
+	} else if (keyboard_enabled && !enable) {
 		CPRINTS("KB disable");
-
+	}
 	keyboard_enabled = enable;
 }
 
