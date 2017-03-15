@@ -691,7 +691,10 @@ static int handle_keyboard_command(uint8_t command, uint8_t *output)
 
 	switch (command) {
 	case I8042_READ_CMD_BYTE:
+		keyboard_clear_buffer();
+		keystroke_enable(0);
 		output[out_len++] = read_ctl_ram(0);
+		keystroke_enable(1);
 		break;
 
 	case I8042_WRITE_CMD_BYTE:
