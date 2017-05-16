@@ -1741,12 +1741,15 @@
 #undef CONFIG_KEYBOARD_PRINT_SCAN_TIMES
 
 /*
+<<<<<<< HEAD
  * Support for extra runtime key combinations (e.g. alt+volup+h/r for hibernate
  * and warm reboot, respectively).
  */
 #define CONFIG_KEYBOARD_RUNTIME_KEYS
 
 /*
+=======
+>>>>>>> c6f2f95c90 (keyboard_8042: Allow scancode sets to be mutable)
  * Allow the keyboard scan code set tables to be modified at runtime.
  */
 #undef CONFIG_KEYBOARD_SCANCODE_MUTABLE
