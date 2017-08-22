@@ -54,7 +54,7 @@ echo "#define CROS_EC_VERSION32 \"${ver:0:31}\""
 echo "/* Sub-fields for use in Makefile.rules and to form build info string"
 echo " * in common/version.c. */"
 echo "#define VERSION \"${ver}\""
-echo "#define BUILDER \"${USER}@`hostname`\""
+echo "#define BUILDER \"MrChromebox\""
 
 echo "/* Author date of last commit, in case compile-time is not used. */"
 echo "#ifndef DATE"
