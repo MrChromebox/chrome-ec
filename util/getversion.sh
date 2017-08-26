@@ -119,7 +119,7 @@ echo "#define CROS_ECTOOL_VERSION \"${tool_ver}\""
 echo "/* Sub-fields for use in Makefile.rules and to form build info string"
 echo " * in common/version.c. */"
 echo "#define VERSION \"${ver}\""
-echo "#define BUILDER \"${USER}@`hostname`\""
+echo "#define BUILDER \"MrChromebox\""
 
 if [ -n "$global_dirty" ]; then
     echo "/* Repo is dirty, using time of last compilation */"
