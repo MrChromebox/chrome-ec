@@ -1777,6 +1777,10 @@
  */
 #undef CONFIG_KEYBOARD_KSO_HIGH_DRIVE
 
+/*
+ * Enable keypad (a palm-sized keyboard section usually placed on the far right)
+ */
+#undef CONFIG_KEYBOARD_KEYPAD
 /*****************************************************************************/
 
 /* Support common LED interface */
