@@ -1347,6 +1347,10 @@
  */
 #undef CONFIG_KEYBOARD_TEST
 
+/*
+ * Enable keypad (a palm-sized keyboard section usually placed on the far right)
+ */
+#undef CONFIG_KEYBOARD_KEYPAD
 /*****************************************************************************/
 
 /* Support common LED interface */
