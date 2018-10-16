@@ -60,6 +60,11 @@ static struct mutex fifo_mutex;
 /* Button and switch state. */
 static uint32_t mkbp_button_state;
 static uint32_t mkbp_switch_state;
+#ifndef HAS_TASK_KEYSCAN
+/* Keys simulated-pressed */
+static uint8_t __bss_slow simulated_key[KEYBOARD_COLS_MAX];
+uint8_t keyboard_cols = KEYBOARD_COLS_MAX;
+#endif /* !defined(HAS_TASK_KEYSCAN) */
 
 /* Config for mkbp protocol; does not include fields from scan config */
 struct ec_mkbp_protocol_config {
@@ -85,7 +90,7 @@ static int get_data_size(enum ec_mkbp_event e)
 {
 	switch (e) {
 	case EC_MKBP_EVENT_KEY_MATRIX:
-		return KEYBOARD_COLS;
+		return keyboard_cols;
 
 	case EC_MKBP_EVENT_HOST_EVENT:
 	case EC_MKBP_EVENT_BUTTON:
@@ -327,7 +332,7 @@ DECLARE_EVENT_SOURCE(EC_MKBP_EVENT_SWITCH, switch_get_next_event);
 
 void keyboard_send_battery_key(void)
 {
-	uint8_t state[KEYBOARD_COLS];
+	uint8_t state[KEYBOARD_COLS_MAX];
 
 	/* Copy debounced state and add battery pseudo-key */
 	memcpy(state, keyboard_scan_get_state(), sizeof(state));
@@ -384,7 +389,7 @@ static int mkbp_get_info(struct host_cmd_handler_args *args)
 
 		/* Version 0 just returns info about the keyboard. */
 		r->rows = KEYBOARD_ROWS;
-		r->cols = KEYBOARD_COLS;
+		r->cols = keyboard_cols;
 		/* This used to be "switches" which was previously 0. */
 		r->reserved = 0;
 
@@ -451,6 +456,67 @@ static int mkbp_get_info(struct host_cmd_handler_args *args)
 DECLARE_HOST_COMMAND(EC_CMD_MKBP_INFO, mkbp_get_info,
 		     EC_VER_MASK(0) | EC_VER_MASK(1));
 
+#ifndef HAS_TASK_KEYSCAN
+/* For boards without a keyscan task, try and simulate keyboard presses. */
+static void simulate_key(int row, int col, int pressed)
+{
+	if ((simulated_key[col] & (1 << row)) == ((pressed ? 1 : 0) << row))
+		return;  /* No change */
+
+	simulated_key[col] &= ~(1 << row);
+	if (pressed)
+		simulated_key[col] |= (1 << row);
+
+	keyboard_fifo_add(simulated_key);
+}
+
+static int command_mkbp_keyboard_press(int argc, char **argv)
+{
+	if (argc == 1) {
+		int i, j;
+
+		ccputs("Simulated keys:\n");
+		for (i = 0; i < keyboard_cols; ++i) {
+			if (simulated_key[i] == 0)
+				continue;
+			for (j = 0; j < KEYBOARD_ROWS; ++j)
+				if (simulated_key[i] & (1 << j))
+					ccprintf("\t%d %d\n", i, j);
+		}
+
+	} else if (argc == 3 || argc == 4) {
+		int r, c, p;
+		char *e;
+
+		c = strtoi(argv[1], &e, 0);
+		if (*e || c < 0 || c >= keyboard_cols)
+			return EC_ERROR_PARAM1;
+
+		r = strtoi(argv[2], &e, 0);
+		if (*e || r < 0 || r >= KEYBOARD_ROWS)
+			return EC_ERROR_PARAM2;
+
+		if (argc == 3) {
+			/* Simulate a press and release */
+			simulate_key(r, c, 1);
+			simulate_key(r, c, 0);
+		} else {
+			p = strtoi(argv[3], &e, 0);
+			if (*e || p < 0 || p > 1)
+				return EC_ERROR_PARAM3;
+
+			simulate_key(r, c, p);
+		}
+	}
+
+	return EC_SUCCESS;
+}
+DECLARE_CONSOLE_COMMAND(kbpress, command_mkbp_keyboard_press,
+			"[col row [0 | 1]]",
+			"Simulate keypress");
+#endif /* !defined(HAS_TASK_KEYSCAN) */
+
+#ifdef HAS_TASK_KEYSCAN
 static void set_keyscan_config(const struct ec_mkbp_config *src,
 			       struct ec_mkbp_protocol_config *dst,
 			       uint32_t valid_mask, uint8_t new_flags)

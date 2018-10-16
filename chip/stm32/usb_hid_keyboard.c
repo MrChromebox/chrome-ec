@@ -41,7 +41,7 @@ struct __attribute__((__packed__)) usb_hid_keyboard_report {
 /* The standard Chrome OS keyboard matrix table. See HUT 1.12v2 Table 12 and
  * https://www.w3.org/TR/DOM-Level-3-Events-code .
  */
-const uint8_t keycodes[KEYBOARD_COLS][KEYBOARD_ROWS] = {
+const uint8_t keycodes[KEYBOARD_COLS_MAX][KEYBOARD_ROWS] = {
 	{0x00, 0x00, 0xe0, 0xe3, 0xe4, HID_KEYBOARD_ASSISTANT_KEY, 0x00, 0x00},
 	{0xe3, 0x29, 0x2b, 0x35, 0x04, 0x1d, 0x1e, 0x14},
 	{0x3a, 0x3d, 0x3c, 0x3b, 0x07, 0x06, 0x20, 0x08},
