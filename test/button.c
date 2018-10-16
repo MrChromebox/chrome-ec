@@ -16,14 +16,18 @@
 #include "gpio.h"
 #include "test_util.h"
 #include "timer.h"
+#include "keyboard_config.h"
 #include "keyboard_protocol.h"
 
 #define INDEX_VOL_DOWN 0
 #define INDEX_VOL_UP 1
 #define UNCHANGED -1
 
-static const struct button_config *button_vol_down = &buttons[INDEX_VOL_DOWN];
-static const struct button_config *button_vol_up = &buttons[INDEX_VOL_UP];
+uint8_t keyboard_cols = KEYBOARD_COLS_MAX;
+
+static const struct button_config *button_vol_down =
+	&buttons[BUTTON_VOLUME_DOWN];
+static const struct button_config *button_vol_up = &buttons[BUTTON_VOLUME_UP];
 
 static int button_state[CONFIG_BUTTON_COUNT];
 
