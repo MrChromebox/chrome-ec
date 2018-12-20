@@ -335,18 +335,6 @@ static void board_chipset_startup(void)
 }
 DECLARE_HOOK(HOOK_CHIPSET_STARTUP, board_chipset_startup, HOOK_PRIO_DEFAULT);
 
-static void board_chipset_shutdown(void)
-{
-	uint32_t flags = bbram_data_read(BBRM_DATA_INDEX_SAVED_RESET_FLAGS);
-	flags |= RESET_FLAG_AP_OFF;
-	chip_save_reset_flags(flags);
-	system_set_reset_flags(RESET_FLAG_AP_OFF);
-	CPRINTS("Set AP_OFF flag");
-}
-DECLARE_HOOK(HOOK_CHIPSET_SHUTDOWN, board_chipset_shutdown,
-	     /* Slightly higher than handle_pending_reboot because
-	      * it may clear AP_OFF flag. */
-	     HOOK_PRIO_DEFAULT - 1);
 #endif
 
 /* Check reset cause */
