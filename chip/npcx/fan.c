@@ -222,7 +222,7 @@ static void fan_config(int ch, int enable_mft_read_rpm)
 
 	/* Set default fan states */
 	p_status->cur_state = TACHO_NORMAL;
-	p_status->fan_mode = TACHO_FAN_DUTY;
+	p_status->fan_mode = TACHO_FAN_RPM;
 	p_status->auto_status = FAN_STATUS_STOPPED;
 }
 
