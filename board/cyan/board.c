@@ -204,18 +204,7 @@ void lid_angle_peripheral_enable(int enable)
 		keyboard_scan_enable(1, KB_SCAN_DISABLE_LID_ANGLE);
 		track_pad_enable(1);
 	} else {
-		/*
-		 * Ensure chipset is off before disabling keyboard. When chipset
-		 * is on, EC keeps keyboard enabled and the AP decides when to
-		 * ignore keys based on its more accurate lid angle calculation.
-		 *
-		 * TODO(crosbug.com/p/43695): Remove this check once we have a
-		 * host command that can inform EC when we are entering or
-		 * exiting tablet mode in S0. Also, add this check back to the
-		 * function lid_angle_update in lid_angle.c
-		 */
-		if (!chipset_in_state(CHIPSET_STATE_ON))
-			keyboard_scan_enable(0, KB_SCAN_DISABLE_LID_ANGLE);
+		keyboard_scan_enable(0, KB_SCAN_DISABLE_LID_ANGLE);
 		track_pad_enable(0);
 	}
 }
