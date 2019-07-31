@@ -131,7 +131,7 @@ enum power_state power_chipset_init(void)
 			gpio_set_level(GPIO_PCH_SYS_PWROK, 0);
 			gpio_set_level(GPIO_PCH_RSMRST_L, 0);
 
-			/*wireless_set_state(WIRELESS_OFF);*/
+			wireless_set_state(WIRELESS_OFF);
 		}
 	}
 
@@ -207,12 +207,12 @@ enum power_state power_handle_state(enum power_state state)
 	case POWER_S3S0:
 		/* Enable wireless */
 
-		/*wireless_set_state(WIRELESS_ON);*/
+		wireless_set_state(WIRELESS_ON);
 
 		if (!power_has_signals(IN_PGOOD_S3)) {
 			chipset_force_shutdown();
 
-		/*wireless_set_state(WIRELESS_OFF);*/
+			wireless_set_state(WIRELESS_OFF);
 			return POWER_S3S5;
 		}
 
@@ -268,7 +268,7 @@ enum power_state power_handle_state(enum power_state state)
 
 		/* Suspend wireless */
 
-		/*wireless_set_state(WIRELESS_SUSPEND);*/
+		wireless_set_state(WIRELESS_SUSPEND);
 
 		/*
 		 * Enable idle task deep sleep. Allow the low power idle task
