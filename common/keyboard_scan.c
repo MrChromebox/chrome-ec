@@ -98,13 +98,15 @@ static uint32_t post_scan_clock_us;
 static int print_state_changes;
 
 static int disable_scanning_mask;  /* Must init to 0 for scanning at boot */
+uint32_t local_disable_scanning = 0; /* Changes only while waiting input */
 
 /* Constantly incrementing counter of the number of times we polled */
 static volatile int kbd_polls;
 
 static int keyboard_scan_is_enabled(void)
 {
-	return !disable_scanning_mask;
+	/* NOTE: this is just an instantaneous glimpse of the variable. */
+	return !local_disable_scanning;
 }
 
 void keyboard_scan_enable(int enable, enum kb_scan_disable_masks mask)
