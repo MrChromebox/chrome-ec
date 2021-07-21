@@ -11,6 +11,7 @@
 #include "charge_state.h"
 #include "extpower.h"
 #include "driver/accel_bma2x2.h"
+#include "driver/accel_lis2dw12.h"
 #include "driver/accelgyro_bmi_common.h"
 #include "driver/ppc/sn5s330.h"
 #include "driver/tcpm/ps8xxx.h"
@@ -21,6 +22,7 @@
 #include "lid_switch.h"
 #include "pi3usb9201.h"
 #include "power.h"
+#include "power/qcom.h"
 #include "power_button.h"
 #include "pwm.h"
 #include "pwm_chip.h"
@@ -29,6 +31,7 @@
 #include "switch.h"
 #include "tablet_mode.h"
 #include "task.h"
+#include "usbc_ocp.h"
 #include "usbc_ppc.h"
 
 #define CPRINTS(format, args...) cprints(CC_USBCHARGE, format, ## args)
@@ -37,6 +40,7 @@
 /* Forward declaration */
 static void tcpc_alert_event(enum gpio_signal signal);
 static void usb0_evt(enum gpio_signal signal);
+static void usba_oc_interrupt(enum gpio_signal signal);
 static void ppc_interrupt(enum gpio_signal signal);
 static void board_connect_c0_sbu(enum gpio_signal s);
 
@@ -60,7 +64,20 @@ static void tcpc_alert_event(enum gpio_signal signal)
 
 static void usb0_evt(enum gpio_signal signal)
 {
-	task_set_event(TASK_ID_USB_CHG_P0, USB_CHG_EVENT_BC12, 0);
+	task_set_event(TASK_ID_USB_CHG_P0, USB_CHG_EVENT_BC12);
+}
+
+static void usba_oc_deferred(void)
+{
+	/* Use next number after all USB-C ports to indicate the USB-A port */
+	board_overcurrent_event(CONFIG_USB_PD_PORT_MAX_COUNT,
+				!gpio_get_level(GPIO_USB_A0_OC_ODL));
+}
+DECLARE_DEFERRED(usba_oc_deferred);
+
+static void usba_oc_interrupt(enum gpio_signal signal)
+{
+	hook_call_deferred(&usba_oc_deferred_data, 0);
 }
 
 static void ppc_interrupt(enum gpio_signal signal)
@@ -88,6 +105,27 @@ static void board_connect_c0_sbu(enum gpio_signal s)
 {
 	hook_call_deferred(&board_connect_c0_sbu_deferred_data, 0);
 }
+
+/* Keyboard scan setting */
+__override struct keyboard_scan_config keyscan_config = {
+	/* Use 80 us, because KSO_02 passes through the H1. */
+	.output_settle_us = 80,
+	/*
+	 * Unmask 0x01 in [1] (KSO_01/KSI_00, the old location of Search key);
+	 * as it uses the new location (KSO_00/KSI_03). And T11 key, which maps
+	 * to KSO_01/KSI_00, is not there.
+	 */
+	.actual_key_mask = {
+		0x1c, 0xfe, 0xff, 0xff, 0xff, 0xf5, 0xff,
+		0xa4, 0xff, 0xfe, 0x55, 0xfa, 0xca
+	},
+	/* Other values should be the same as the default configuration. */
+	.debounce_down_us = 9 * MSEC,
+	.debounce_up_us = 30 * MSEC,
+	.scan_period_us = 3 * MSEC,
+	.min_post_scan_delay_us = 1000,
+	.poll_timeout_us = 100 * MSEC,
+};
 
 /* I2C port map */
 const struct i2c_port_t i2c_ports[] = {
@@ -143,7 +181,7 @@ BUILD_ASSERT(ARRAY_SIZE(adc_channels) == ADC_CH_COUNT);
 const struct pwm_t pwm_channels[] = {
 	[PWM_CH_KBLIGHT] = { .channel = 3, .flags = 0, .freq = 10000 },
 	/* TODO(waihong): Assign a proper frequency. */
-	[PWM_CH_DISPLIGHT] = { .channel = 5, .flags = 0, .freq = 4800 },
+	[PWM_CH_DISPLIGHT] = { .channel = 5, .flags = 0, .freq = 20000 },
 };
 BUILD_ASSERT(ARRAY_SIZE(pwm_channels) == PWM_CH_COUNT);
 
@@ -203,8 +241,20 @@ const struct pi3usb9201_config_t pi3usb9201_bc12_chips[] = {
 /* Initialize board. */
 static void board_init(void)
 {
+	/*
+	 * The rev-2 hardware doesn't have the external pull-up fix for the bug
+	 * b/164256614. It requires rework to stuff the resistor. For people who
+	 * has difficulty to do the rework, this is a workaround, which makes
+	 * the GPIO push-pull, instead of open-drain.
+	 */
+	if (system_get_board_version() == 2)
+		gpio_set_flags(GPIO_HIBERNATE_L, GPIO_OUTPUT);
+
 	/* Enable BC1.2 interrupts */
 	gpio_enable_interrupt(GPIO_USB_C0_BC12_INT_L);
+
+	/* Enable USB-A overcurrent interrupt */
+	gpio_enable_interrupt(GPIO_USB_A0_OC_ODL);
 
 	/* Enable interrupt for BMI160 sensor */
 	gpio_enable_interrupt(GPIO_ACCEL_GYRO_INT_L);
@@ -221,13 +271,44 @@ static void board_init(void)
 }
 DECLARE_HOOK(HOOK_INIT, board_init, HOOK_PRIO_DEFAULT);
 
+void board_hibernate(void)
+{
+	int i;
+
+	/*
+	 * Sensors are unpowered in hibernate. Apply PD to the
+	 * interrupt lines such that they don't float.
+	 */
+	gpio_set_flags(GPIO_ACCEL_GYRO_INT_L,
+		       GPIO_INPUT | GPIO_PULL_DOWN);
+	gpio_set_flags(GPIO_LID_ACCEL_INT_L,
+		       GPIO_INPUT | GPIO_PULL_DOWN);
+
+	/*
+	 * Board rev 2+ has the hardware fix. Don't need the following
+	 * workaround.
+	 */
+	if (system_get_board_version() >= 2)
+		return;
+
+	/*
+	 * Enable the PPC power sink path before EC enters hibernate;
+	 * otherwise, ACOK won't go High and can't wake EC up. Check the
+	 * bug b/170324206 for details.
+	 */
+	for (i = 0; i < CONFIG_USB_PD_PORT_MAX_COUNT; i++)
+		ppc_vbus_sink_enable(i, 1);
+}
+
 __override uint16_t board_get_ps8xxx_product_id(int port)
 {
-	/* Pompom rev 1+ changes TCPC from PS8751 to PS8805 */
+	/* Pompom rev 2+ changes TCPC from PS8805 to PS8755 */
 	if (system_get_board_version() == 0)
 		return PS8751_PRODUCT_ID;
+	else if (system_get_board_version() == 1)
+		return PS8805_PRODUCT_ID;
 
-	return PS8805_PRODUCT_ID;
+	return PS8755_PRODUCT_ID;
 }
 
 void board_tcpc_init(void)
@@ -396,6 +477,7 @@ void board_set_charge_limit(int port, int supplier, int charge_ma,
 		charge_ma = max_ma;
 	}
 
+	charge_ma = charge_ma * 95 / 100;
 	charge_set_input_current_limit(MAX(charge_ma,
 					   CONFIG_CHARGER_INPUT_CURRENT),
 				       charge_mv);
@@ -418,6 +500,7 @@ static struct mutex g_lid_mutex;
 
 static struct bmi_drv_data_t g_bmi160_data;
 static struct accelgyro_saved_data_t g_bma255_data;
+static struct stprivate_data g_lis2dwl_data;
 
 /* Matrix to rotate accelerometer into standard reference frame */
 const mat33_fp_t base_standard_ref = {
@@ -466,7 +549,7 @@ struct motion_sensor_t motion_sensors[] = {
 	 */
 	[BASE_ACCEL] = {
 	 .name = "Base Accel",
-	 .active_mask = SENSOR_ACTIVE_S0_S3_S5,
+	 .active_mask = SENSOR_ACTIVE_S0_S3,
 	 .chip = MOTIONSENSE_CHIP_BMI160,
 	 .type = MOTIONSENSE_TYPE_ACCEL,
 	 .location = MOTIONSENSE_LOC_BASE,
@@ -491,7 +574,7 @@ struct motion_sensor_t motion_sensors[] = {
 	},
 	[BASE_GYRO] = {
 	 .name = "Gyro",
-	 .active_mask = SENSOR_ACTIVE_S0_S3_S5,
+	 .active_mask = SENSOR_ACTIVE_S0_S3,
 	 .chip = MOTIONSENSE_CHIP_BMI160,
 	 .type = MOTIONSENSE_TYPE_GYRO,
 	 .location = MOTIONSENSE_LOC_BASE,
@@ -507,6 +590,57 @@ struct motion_sensor_t motion_sensors[] = {
 	},
 };
 const unsigned int motion_sensor_count = ARRAY_SIZE(motion_sensors);
+
+struct motion_sensor_t lis2dwl_lid_accel = {
+	.name = "Lid Accel",
+	.active_mask = SENSOR_ACTIVE_S0_S3,
+	.chip = MOTIONSENSE_CHIP_LIS2DWL,
+	.type = MOTIONSENSE_TYPE_ACCEL,
+	.location = MOTIONSENSE_LOC_LID,
+	.drv = &lis2dw12_drv,
+	.mutex = &g_lid_mutex,
+	.drv_data = &g_lis2dwl_data,
+	.port = I2C_PORT_ACCEL,
+	.i2c_spi_addr_flags = LIS2DWL_ADDR0_FLAGS,
+	.rot_standard_ref = &lid_standard_ref,
+	.default_range = 2, /* g */
+	.min_frequency = LIS2DW12_ODR_MIN_VAL,
+	.max_frequency = LIS2DW12_ODR_MAX_VAL,
+	.config = {
+		/* EC use accel for angle detection */
+		[SENSOR_CONFIG_EC_S0] = {
+			.odr = 12500 | ROUND_UP_FLAG,
+		},
+		/* Sensor on for lid angle detection */
+		[SENSOR_CONFIG_EC_S3] = {
+			.odr = 10000 | ROUND_UP_FLAG,
+		},
+	},
+};
+
+static void board_detect_motionsensor(void)
+{
+	int val = 0;
+
+	/*
+	 * BMA253 and LIS2DWL have same slave address, so we check the
+	 * LIS2DWL WHO AM I register to check the lid accel type
+	 */
+	i2c_read8(I2C_PORT_SENSOR, LIS2DWL_ADDR0_FLAGS,
+		LIS2DW12_WHO_AM_I_REG, &val);
+
+	if (val == LIS2DW12_WHO_AM_I) {
+		motion_sensors[LID_ACCEL] = lis2dwl_lid_accel;
+		CPRINTS("Lid Accel: LIS2DWL");
+	}
+}
+
+static void board_update_sensor_config_from_sku(void)
+{
+	board_detect_motionsensor();
+}
+DECLARE_HOOK(HOOK_INIT, board_update_sensor_config_from_sku,
+	     HOOK_PRIO_INIT_I2C + 2);
 
 #ifndef TEST_BUILD
 /* This callback disables keyboard when convertibles are fully open */

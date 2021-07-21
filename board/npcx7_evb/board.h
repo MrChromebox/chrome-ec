@@ -36,8 +36,8 @@
 #define CONFIG_ENABLE_JTAG_SELECTION
 #define CONFIG_BOARD_VERSION_GPIO
 #define CONFIG_EXTPOWER_GPIO
-#define CONFIG_I2C_MASTER
-#define CONFIG_KEYBOARD_BOARD_CONFIG
+#define CONFIG_I2C_CONTROLLER
+
 #define CONFIG_KEYBOARD_PROTOCOL_8042
 #undef  CONFIG_LOW_POWER_IDLE /* Deep Sleep Support */
 #define CONFIG_POWER_BUTTON
@@ -69,10 +69,10 @@
 #if defined(CHIP_VARIANT_NPCX7M6FC) || defined(CHIP_VARIANT_NPCX7M7FC) || \
 	defined(CHIP_VARIANT_NPCX7M7WC)
 #define CONFIG_SPI_FLASH_W25Q40 /* Internal spi flash type */
-#define CONFIG_FLASH_SIZE 0x00080000 /* 512 KB internal spi flash */
+#define CONFIG_FLASH_SIZE_BYTES 0x00080000 /* 512 KB internal spi flash */
 #else
 #define CONFIG_SPI_FLASH_W25Q80 /* Internal spi flash type */
-#define CONFIG_FLASH_SIZE 0x00100000 /* 1 MB internal spi flash */
+#define CONFIG_FLASH_SIZE_BYTES 0x00100000 /* 1 MB internal spi flash */
 #endif
 
 /* New features on npcx7 ec */
@@ -86,7 +86,6 @@
 #define CONFIG_AUDIO_CODEC_I2S_RX /* Use Audio front-end for Wake-on-Voice */
 #endif
 #undef CONFIG_FANS /* Remove fan application */
-#define CONFIG_FANS 0
 #else
 #undef CONFIG_HIBERNATE_PSL /* Use PSL (Power Switch Logic) for hibernate */
 #undef CONFIG_CLOCK_SRC_EXTERNAL /* Use external 32kHz OSC as LFCLK source */

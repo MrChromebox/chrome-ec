@@ -16,6 +16,8 @@
 #undef CONFIG_HOSTCMD_DEBUG_MODE
 #define CONFIG_HOSTCMD_DEBUG_MODE HCDEBUG_OFF
 
+/* EC console on UART 0 */
+#define CONFIG_UART_CONSOLE 0
 
 /* EC console commands  */
 #define CONFIG_CMD_ACCELS
@@ -113,15 +115,14 @@
 
 /* EC */
 #define CONFIG_ADC
-#define CONFIG_BOARD_VERSION_CUSTOM
 #define CONFIG_EXTPOWER_GPIO
 #undef   CONFIG_EXTPOWER_DEBOUNCE_MS
 #define  CONFIG_EXTPOWER_DEBOUNCE_MS 1000
 #define CONFIG_FPU
 #define CONFIG_HOSTCMD_FLASH_SPI_INFO
 #define CONFIG_I2C
-#define CONFIG_I2C_MASTER
-#define CONFIG_KEYBOARD_BOARD_CONFIG
+#define CONFIG_I2C_CONTROLLER
+
 #define CONFIG_KEYBOARD_PROTOCOL_8042
 #define CONFIG_KEYBOARD_COL2_INVERTED
 #define CONFIG_KEYBOARD_PWRBTN_ASSERTS_KSI2
@@ -167,7 +168,7 @@
 #define CONFIG_SPI_FLASH_PORT 0
 #define CONFIG_SPI_FLASH
 
-#define CONFIG_FLASH_SIZE 524288
+#define CONFIG_FLASH_SIZE_BYTES 524288
 #define CONFIG_SPI_FLASH_REGS
 #define CONFIG_SPI_FLASH_W25Q40	/* FIXME: Should be GD25LQ40? */
 
@@ -297,7 +298,6 @@ enum reef_board_version {
 #define PD_POWER_SUPPLY_TURN_OFF_DELAY 250000 /* us */
 
 /* delay to turn on/off vconn */
-#define PD_VCONN_SWAP_DELAY 5000 /* us */
 
 /* Define typical operating power and max power */
 #define PD_OPERATING_POWER_MW 15000
@@ -315,14 +315,6 @@ void board_print_tcpc_fw_version(int port);
 
 /* Map I2C port to controller */
 int board_i2c_p2c(int port);
-
-/* Return the two slave addresses the specified
- * controller will respond to when controller
- * is acting as a slave.
- * b[6:0]  = b[7:1] of I2C address 1
- * b[14:8] = b[7:1] of I2C address 2
- */
-uint16_t board_i2c_slave_addrs(int controller);
 
 /* MCHP - firwmare-reef-9042.B does have LID_ALS bit
  * because its using TASK_ALS ?

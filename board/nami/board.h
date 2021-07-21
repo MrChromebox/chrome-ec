@@ -21,14 +21,14 @@
 #define CONFIG_BOARD_VERSION_CBI
 #define CONFIG_BOARD_FORCE_RESET_PIN
 #define CONFIG_CRC8
-#define CONFIG_CROS_BOARD_INFO
+#define CONFIG_CBI_EEPROM
 #define CONFIG_CASE_CLOSED_DEBUG_EXTERNAL
 #define CONFIG_DPTF
-#define CONFIG_FLASH_SIZE 0x80000
+#define CONFIG_FLASH_SIZE_BYTES 0x80000
 #define CONFIG_FPU
 #define CONFIG_I2C
-#define CONFIG_I2C_MASTER
-#define CONFIG_KEYBOARD_BOARD_CONFIG
+#define CONFIG_I2C_CONTROLLER
+
 #define CONFIG_KEYBOARD_COL2_INVERTED
 #define CONFIG_KEYBOARD_PROTOCOL_8042
 #define CONFIG_KEYBOARD_KEYPAD
@@ -58,9 +58,6 @@
 #define CONFIG_FAN_DYNAMIC
 #define CONFIG_THROTTLE_AP
 #define CONFIG_PWM_KBLIGHT
-#define CONFIG_SUPPRESSED_HOST_COMMANDS \
-	EC_CMD_CONSOLE_SNAPSHOT, EC_CMD_CONSOLE_READ, EC_CMD_PD_GET_LOG_ENTRY, \
-	EC_CMD_MOTION_SENSE_CMD
 
 /* EC console commands */
 #define CONFIG_CMD_ACCELS
@@ -304,7 +301,6 @@ enum model_id {
 #define PD_POWER_SUPPLY_TURN_OFF_DELAY	250000 /* us */
 
 /* delay to turn on/off vconn */
-#define PD_VCONN_SWAP_DELAY		5000   /* us */
 
 /* Define typical operating power and max power */
 #define PD_OPERATING_POWER_MW		15000
@@ -327,6 +323,8 @@ extern uint8_t model;
 
 /* SKU_ID[24:31] are dedicated to OEM customization */
 #define CBI_SKU_CUSTOM_FIELD(val)	((val) >> 24)
+
+void ccd_mode_isr(enum gpio_signal signal);
 
 #endif /* !__ASSEMBLER__ */
 
