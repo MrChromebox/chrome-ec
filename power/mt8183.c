@@ -169,7 +169,7 @@ void chipset_exit_hard_off_button(void)
 DECLARE_DEFERRED(chipset_exit_hard_off_button);
 
 /* If chipset needs to be reset, EC also reboots to RO. */
-void chipset_reset(enum chipset_reset_reason reason)
+void chipset_reset(enum chipset_shutdown_reason reason)
 {
 	int flags = SYSTEM_RESET_HARD;
 
