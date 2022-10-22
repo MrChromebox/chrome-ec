@@ -45,7 +45,7 @@ enum {
  *  - 35 ~ 45 :  1.6A       4.0A         1.6A
  *  - 45 ~ 50 :  0.8A       1.6A         0.8A
  */
-static const int const current_limit[TEMP_RANGE_MAX][VOLT_RANGE_MAX] = {
+static const int current_limit[TEMP_RANGE_MAX][VOLT_RANGE_MAX] = {
 	{ 800, 1600,  800},
 	{1600, 4000, 1600},
 	{4000, 4000, 4000},

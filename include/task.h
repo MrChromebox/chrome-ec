@@ -31,9 +31,6 @@ void interrupt_disable(void);
 /* Enable CPU interrupt bit. */
 void interrupt_enable(void);
 
-/* Return true if we are in interrupt context. */
-inline int in_interrupt_context(void);
-
 /* Set an event for task <tskid> and wake it up if it is higher priority than
  * the current task.
  *

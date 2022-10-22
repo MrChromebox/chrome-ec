@@ -603,7 +603,7 @@ int uart_emergency_printf(const char *format, ...)
 /* For use when debugging verified boot. We could wrap it with a real function,
  * but it's rarely needed and this doesn't add any extra code. We have to
  * declare it here in order for this trick to work.  */
-void VbExDebug(const char *format, ...)
+int VbExDebug(const char *format, ...)
 	__attribute__((weak, alias("uart_printf")));
 
 

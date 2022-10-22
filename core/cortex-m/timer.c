@@ -178,6 +178,13 @@ timestamp_t get_time(void)
 	return ts;
 }
 
+static inline int in_interrupt_context(void)
+{
+	int ret;
+	asm("mrs %0, ipsr \n"             /* read exception number */
+	    "lsl %0, #23  \n":"=r"(ret)); /* exception bits are the 9 LSB */
+	return ret;
+}
 
 void timer_print_info(void)
 {

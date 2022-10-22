@@ -97,7 +97,7 @@ static const struct {
 	uint32_t r0;
 	uint32_t pc;
 	uint16_t stack_size;
-} const tasks_init[] = {
+} tasks_init[] = {
 	TASK(IDLE, __idle, 0, IDLE_TASK_STACK_SIZE)
 	CONFIG_TASK_LIST
 };
@@ -164,7 +164,7 @@ void interrupt_enable(void)
 }
 
 
-inline int in_interrupt_context(void)
+static inline int in_interrupt_context(void)
 {
 	int ret;
 	asm("mrs %0, ipsr \n"             /* read exception number */
@@ -173,7 +173,7 @@ inline int in_interrupt_context(void)
 }
 
 
-inline int get_interrupt_context(void)
+static inline int get_interrupt_context(void)
 {
 	int ret;
 	asm("mrs %0, ipsr \n":"=r"(ret)); /* read exception number */
