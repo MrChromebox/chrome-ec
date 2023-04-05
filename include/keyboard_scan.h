@@ -117,15 +117,6 @@ static inline void keyboard_scan_enable(int enable,
 		enum kb_scan_disable_masks mask) { }
 #endif
 
-#ifdef CONFIG_KEYBOARD_SUPPRESS_NOISE
-/**
- * Indicate to audio codec that a key has been pressed.
- *
- * Boards may supply this function to suppress audio noise.
- */
-void keyboard_suppress_noise(void);
-#endif
-
 #ifdef CONFIG_KEYBOARD_LANGUAGE_ID
 /**
  * Get the KEYBOARD ID for a keyboard
