@@ -107,9 +107,6 @@ static uint8_t __bss_slow debounced_state[KEYBOARD_COLS_MAX];
 static uint8_t __bss_slow debouncing[KEYBOARD_COLS_MAX];
 /* Keys simulated-pressed */
 static uint8_t __bss_slow simulated_key[KEYBOARD_COLS_MAX];
-#ifdef CONFIG_KEYBOARD_LANGUAGE_ID
-static uint8_t __bss_slow keyboard_id[KEYBOARD_IDS];
-#endif
 
 /* Times of last scans */
 static uint32_t __bss_slow scan_time[SCAN_TIME_COUNT];
@@ -329,38 +326,6 @@ static int read_matrix(uint8_t *state)
 
 	return pressed ? 1 : 0;
 }
-
-#ifdef CONFIG_KEYBOARD_LANGUAGE_ID
-/**
- * Read the raw keyboard IDs state.
- *
- * Used in pre-init, so must not make task-switching-dependent calls; udelay()
- * is ok because it's a spin-loop.
- *
- * @param id		Destination for keyboard id (must be KEYBOARD_IDS long).
- *
- */
-static void read_matrix_id(uint8_t *id)
-{
-	int c;
-
-	for (c = 0; c < KEYBOARD_IDS; c++) {
-		/* Select the ID pin, then wait a bit for it to settle.
-		 * Caveat: If a keyboard maker puts ID pins right after scan
-		 * columns, we can't support variable column size with a single
-		 * image. */
-		keyboard_raw_drive_column(KEYBOARD_COLS_MAX + c);
-		udelay(keyscan_config.output_settle_us);
-
-		/* Read the row state */
-		id[c] = keyboard_raw_read_rows();
-
-		CPRINTS("Keyboard ID%u: 0x%02x", c, id[c]);
-	}
-
-	keyboard_raw_drive_column(KEYBOARD_COLUMN_NONE);
-}
-#endif
 
 #ifdef CONFIG_KEYBOARD_RUNTIME_KEYS
 
@@ -804,11 +769,6 @@ void keyboard_scan_init(void)
 	/* Initialize raw state */
 	read_matrix(debounced_state);
 
-#ifdef CONFIG_KEYBOARD_LANGUAGE_ID
-	/* Check keyboard ID state */
-	read_matrix_id(keyboard_id);
-#endif
-
 #ifdef CONFIG_KEYBOARD_BOOT_KEYS
 	/* Check for keys held down at boot */
 	boot_key_value = check_boot_key(debounced_state);
@@ -1075,26 +1035,6 @@ static enum ec_status keyboard_factory_test(struct host_cmd_handler_args *args)
 
 DECLARE_HOST_COMMAND(EC_CMD_KEYBOARD_FACTORY_TEST, keyboard_factory_test,
 		     EC_VER_MASK(0));
-#endif
-
-#ifdef CONFIG_KEYBOARD_LANGUAGE_ID
-int keyboard_get_keyboard_id(void)
-{
-	int c;
-	uint32_t id = 0;
-
-	BUILD_ASSERT(sizeof(id) >= KEYBOARD_IDS);
-
-	for (c = 0; c < KEYBOARD_IDS; c++) {
-		/* Check ID ghosting if more than one bit in any KSIs was set */
-		if (keyboard_id[c] & (keyboard_id[c] - 1))
-			/* ID ghosting is found */
-			return KEYBOARD_ID_UNREADABLE;
-		else
-			id |= keyboard_id[c] << (c * 8);
-	}
-	return id;
-}
 #endif
 
 /*****************************************************************************/
