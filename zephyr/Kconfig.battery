@@ -339,6 +339,14 @@ config PLATFORM_EC_CHARGER_SENSE_RESISTOR_AC
 	  external AC power supply. Its value must be known for the calculation
 	  to be correct. The value is typically around 10 mOhms.
 
+config PLATFORM_EC_BATTERY_CUTOFF_TIMEOUT_MSEC
+	int "Timeout for battery cutoff completion"
+	depends on PLATFORM_EC_BATTERY_CUT_OFF
+	default 8000
+	help
+	  After the EC executes battery cutoff, it'll wait for this amount of
+	  time in msec before deciding the cutoff failed.
+
 config PLATFORM_EC_BATTERY_FUEL_GAUGE
 	bool "Board supplies battery info"
 	help
