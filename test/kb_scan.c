@@ -559,6 +559,8 @@ void test_init(void)
 {
 	uint32_t state = system_get_scratchpad();
 
+	gpio_set_level(GPIO_POWER_BUTTON_L, 1);
+
 	if (state & TEST_STATE_MASK(TEST_STATE_STEP_2)) {
 		/* Power-F3-ESC */
 		system_set_reset_flags(system_get_reset_flags() |
