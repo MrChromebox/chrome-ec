@@ -1038,6 +1038,9 @@ static int command_ksstate(int argc, char **argv)
 	ccprintf("Keyboard scan disable mask: 0x%08x\n", disable_scanning_mask);
 	ccprintf("Keyboard scan state printing %s\n",
 		 print_state_changes ? "on" : "off");
+#ifdef CONFIG_KEYBOARD_BOOT_KEYS
+	ccprintf("boot keys: 0x%08x\n", boot_key_value);
+#endif
 	return EC_SUCCESS;
 }
 DECLARE_CONSOLE_COMMAND(ksstate, command_ksstate, "ksstate [on | off | force]",
