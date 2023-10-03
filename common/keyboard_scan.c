@@ -244,6 +244,14 @@ static void simulate_key(int row, int col, int pressed)
 	ensure_keyboard_scanned(kbd_polls);
 }
 
+static bool power_button_raw_pressed(void)
+{
+	if (IS_ENABLED(CONFIG_POWER_BUTTON))
+		return power_button_signal_asserted();
+	else
+		return false;
+}
+
 /**
  * Read the raw keyboard matrix state.
  *
@@ -263,6 +271,8 @@ static int read_matrix(uint8_t *state, bool at_boot)
 
 	/* 1. Read input pins */
 	for (c = 0; c < keyboard_cols; c++) {
+		int pb_pressed;
+
 		/*
 		 * Skip if scanning becomes disabled. Clear the state
 		 * to make sure we don't mix new and old states in the
@@ -275,12 +285,21 @@ static int read_matrix(uint8_t *state, bool at_boot)
 			continue;
 		}
 
+		pb_pressed = power_button_raw_pressed();
+
 		/* Select column, then wait a bit for it to settle */
 		keyboard_raw_drive_column(c);
 		udelay(keyscan_config.output_settle_us);
 
 		/* Read the row state */
 		state[c] = keyboard_raw_read_rows();
+
+		if (pb_pressed != power_button_raw_pressed()) {
+			c--;
+			continue;
+		} else if (pb_pressed) {
+			state[c] &= ~KEYBOARD_MASKED_BY_POWERBTN;
+		}
 
 		/* Use simulated keyscan sequence instead if testing active */
 		if (IS_ENABLED(CONFIG_KEYBOARD_TEST))
