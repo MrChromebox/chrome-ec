@@ -3564,6 +3564,9 @@ struct __ec_align1 ec_params_console_read_v1 {
 	uint8_t subcmd; /* enum ec_console_read_subcmd */
 };
 
+/* Print directly to EC console from host. */
+#define EC_CMD_CONSOLE_PRINT 0x00AC
+
 /*****************************************************************************/
 
 /*
