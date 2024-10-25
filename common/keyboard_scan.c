@@ -53,19 +53,23 @@
 #define CONFIG_KEYBOARD_POST_SCAN_CLOCKS 16000
 #endif
 
-__overridable struct keyboard_scan_config keyscan_config = {
+/*
+ * CONFIG_KEYBOARD_COL2_INVERTED is defined for passing the column 2
+ * to H1 which inverts the signal. The signal passing through H1
+ * adds more delay. Need a larger delay value. Otherwise, pressing
+ * Refresh key will also trigger T key, which is in the next scanning
+ * column line. See http://b/156007029.
+ */
 #ifdef CONFIG_KEYBOARD_COL2_INVERTED
-	/*
-	 * CONFIG_KEYBOARD_COL2_INVERTED is defined for passing the column 2
-	 * to H1 which inverts the signal. The signal passing through H1
-	 * adds more delay. Need a larger delay value. Otherwise, pressing
-	 * Refresh key will also trigger T key, which is in the next scanning
-	 * column line. See http://b/156007029.
-	 */
-	.output_settle_us = 80,
+#define COL2_DELAY_US 30
 #else
+#define COL2_DELAY_US 0
+#endif
+
+#define COL2 2
+
+__overridable struct keyboard_scan_config keyscan_config = {
 	.output_settle_us = 50,
-#endif /* CONFIG_KEYBOARD_COL2_INVERTED */
 	.debounce_down_us = 9 * MSEC,
 	.debounce_up_us = 30 * MSEC,
 	.scan_period_us = 3 * MSEC,
@@ -264,6 +268,12 @@ static int read_matrix(uint8_t *state)
 		/* Select column, then wait a bit for it to settle */
 		keyboard_raw_drive_column(c);
 		udelay(keyscan_config.output_settle_us);
+
+		/* Only add the extre delay when selecting or deselecting COL2
+		 */
+		if (c == COL2 || c == (COL2 + 1)) {
+			udelay(COL2_DELAY_US);
+		}
 
 		/* Read the row state */
 		state[c] = keyboard_raw_read_rows();
@@ -607,6 +617,7 @@ static int check_keys_changed(uint8_t *state)
 }
 
 #ifdef CONFIG_KEYBOARD_BOOT_KEYS
+
 /*
  * Returns mask of the boot keys that are pressed, with at most the keys used
  * for keyboard-controlled reset also pressed.
@@ -656,6 +667,31 @@ static uint32_t check_key_list(const uint8_t *state)
 	CPRINTS("KB boot key mask %x", boot_key_mask);
 	return boot_key_mask;
 }
+
+#ifdef CONFIG_KEYBOARD_SCAN_ADC
+static void read_adc_boot_keys(uint8_t *state)
+{
+	int k;
+
+	for (k = 0; k < ARRAY_SIZE(boot_key_list); k++) {
+		int c = boot_key_list[k].col;
+		int r = boot_key_list[k].row;
+
+		/* Select column, then wait a bit for it to settle */
+		keyboard_raw_drive_column(c);
+		udelay(keyscan_config.output_settle_us + COL2_DELAY_US);
+
+		if (adc_read_channel(ADC_KSI_00 + r) >
+		    keyscan_config.ksi_threshold_mv)
+			state[c] |= BIT(r);
+	}
+
+	/* Read refresh key */
+	keyboard_read_refresh_key(state);
+
+	keyboard_raw_drive_column(KEYBOARD_COLUMN_NONE);
+}
+#endif
 
 /**
  * Check what boot key is down, if any.
@@ -793,6 +829,8 @@ void keyboard_scan_task(void *u)
 			if (!new_disable_scanning) {
 				/* Enabled now */
 				keyboard_raw_drive_column(KEYBOARD_COLUMN_ALL);
+				udelay(keyscan_config.output_settle_us +
+				       COL2_DELAY_US);
 			} else if (!local_disable_scanning) {
 				/*
 				 * Scanning isn't enabled but it was last time
