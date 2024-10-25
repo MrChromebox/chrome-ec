@@ -60,19 +60,23 @@
 #define CONFIG_KEYBOARD_POST_SCAN_CLOCKS 16000
 #endif
 
-__overridable struct keyboard_scan_config keyscan_config = {
+/*
+ * CONFIG_KEYBOARD_COL2_INVERTED is defined for passing the column 2
+ * to H1 which inverts the signal. The signal passing through H1
+ * adds more delay. Need a larger delay value. Otherwise, pressing
+ * Refresh key will also trigger T key, which is in the next scanning
+ * column line. See http://b/156007029.
+ */
 #ifdef CONFIG_KEYBOARD_COL2_INVERTED
-	/*
-	 * CONFIG_KEYBOARD_COL2_INVERTED is defined for passing the column 2
-	 * to H1 which inverts the signal. The signal passing through H1
-	 * adds more delay. Need a larger delay value. Otherwise, pressing
-	 * Refresh key will also trigger T key, which is in the next scanning
-	 * column line. See http://b/156007029.
-	 */
-	.output_settle_us = 80,
+#define COL2_DELAY_US 30
 #else
+#define COL2_DELAY_US 0
+#endif
+
+#define COL2 2
+
+__overridable struct keyboard_scan_config keyscan_config = {
 	.output_settle_us = 50,
-#endif /* CONFIG_KEYBOARD_COL2_INVERTED */
 	.debounce_down_us = 9 * MSEC,
 	.debounce_up_us = 30 * MSEC,
 	.scan_period_us = 3 * MSEC,
@@ -301,6 +305,12 @@ static int read_matrix(uint8_t *state, bool at_boot)
 		/* Select column, then wait a bit for it to settle */
 		keyboard_raw_drive_column(c);
 		udelay(keyscan_config.output_settle_us);
+
+		/* Only add the extre delay when selecting or deselecting COL2
+		 */
+		if (c == COL2 || c == (COL2 + 1)) {
+			udelay(COL2_DELAY_US);
+		}
 
 		/* Read the row state */
 		state[c] = keyboard_raw_read_rows();
@@ -748,7 +758,7 @@ static uint8_t keyboard_scan_column(int column)
 	uint8_t state;
 
 	keyboard_raw_drive_column(column);
-	udelay(keyscan_config.output_settle_us);
+	udelay(keyscan_config.output_settle_us + COL2_DELAY_US);
 #ifdef CONFIG_KEYBOARD_SCAN_ADC
 	state = keyboard_read_adc_rows();
 #else
@@ -1026,7 +1036,8 @@ void keyboard_scan_task(void *u)
 				 * results.
 				 */
 				keyboard_raw_drive_column(KEYBOARD_COLUMN_ALL);
-				udelay(keyscan_config.output_settle_us);
+				udelay(keyscan_config.output_settle_us +
+				       COL2_DELAY_US);
 			} else if (!local_disable_scanning) {
 				/*
 				 * Scanning isn't enabled but it was last time
