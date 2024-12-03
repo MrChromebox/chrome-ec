@@ -6104,6 +6104,8 @@ static void pe_vdm_identity_request_cbl_run(int port)
 
 static void pe_vdm_identity_request_cbl_exit(int port)
 {
+	enum pd_discovery_state identity_state;
+
 	/*
 	 * When cable GoodCRCs but does not reply, down-rev to PD 2.0 and try
 	 * again.
@@ -6141,11 +6143,12 @@ static void pe_vdm_identity_request_cbl_exit(int port)
 		 */
 		set_cable_rev(port, PD_REV20);
 
+	identity_state = pd_get_identity_discovery(port, pe[port].tx_type);
+
 	/*
 	 * Set discover identity timer unless BUSY case already did so.
 	 */
-	if (pd_get_identity_discovery(port, pe[port].tx_type) ==
-		    PD_DISC_NEEDED &&
+	if (identity_state == PD_DISC_NEEDED &&
 	    pd_timer_is_expired(port, PE_TIMER_DISCOVER_IDENTITY)) {
 		/*
 		 * The tDiscoverIdentity timer is used during an explicit
@@ -6164,13 +6167,14 @@ static void pe_vdm_identity_request_cbl_exit(int port)
 	/* Do not attempt further discovery if identity discovery failed or if
 	 * DiscoverIdentity ACK did not set Modal Operation.
 	 */
-	if (pd_get_identity_discovery(port, pe[port].tx_type) == PD_DISC_FAIL) {
+	if (identity_state == PD_DISC_FAIL) {
 		pd_set_svids_discovery(port, pe[port].tx_type, PD_DISC_FAIL);
 		pd_notify_event(port,
 				pe[port].tx_type == TCPCI_MSG_SOP ?
 					PD_STATUS_EVENT_SOP_DISC_DONE :
 					PD_STATUS_EVENT_SOP_PRIME_DISC_DONE);
-	} else if (!pd_get_identity_response(port, pe[port].tx_type)
+	} else if (identity_state == PD_DISC_COMPLETE &&
+		   !pd_get_identity_response(port, pe[port].tx_type)
 			    ->idh.modal_support) {
 		pd_set_svids_discovery(port, pe[port].tx_type,
 				       PD_DISC_COMPLETE);
@@ -6245,6 +6249,8 @@ static void pe_init_port_vdm_identity_request_run(int port)
 
 static void pe_init_port_vdm_identity_request_exit(int port)
 {
+	enum pd_discovery_state identity_state;
+
 	if (PE_CHK_FLAG(port, PE_FLAGS_VDM_REQUEST_TIMEOUT)) {
 		PE_CLR_FLAG(port, PE_FLAGS_VDM_REQUEST_TIMEOUT);
 		/*
@@ -6259,16 +6265,19 @@ static void pe_init_port_vdm_identity_request_exit(int port)
 		pd_set_identity_discovery(port, pe[port].tx_type, PD_DISC_FAIL);
 	}
 
+	identity_state = pd_get_identity_discovery(port, pe[port].tx_type);
+
 	/* Do not attempt further discovery if identity discovery failed or if
 	 * DiscoverIdentity ACK did not set Modal Operation.
 	 */
-	if (pd_get_identity_discovery(port, pe[port].tx_type) == PD_DISC_FAIL) {
+	if (identity_state == PD_DISC_FAIL) {
 		pd_set_svids_discovery(port, pe[port].tx_type, PD_DISC_FAIL);
 		pd_notify_event(port,
 				pe[port].tx_type == TCPCI_MSG_SOP ?
 					PD_STATUS_EVENT_SOP_DISC_DONE :
 					PD_STATUS_EVENT_SOP_PRIME_DISC_DONE);
-	} else if (!pd_get_identity_response(port, pe[port].tx_type)
+	} else if (identity_state == PD_DISC_COMPLETE &&
+		   !pd_get_identity_response(port, pe[port].tx_type)
 			    ->idh.modal_support) {
 		pd_set_svids_discovery(port, pe[port].tx_type,
 				       PD_DISC_COMPLETE);
