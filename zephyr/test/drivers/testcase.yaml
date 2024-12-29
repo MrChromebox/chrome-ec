@@ -1022,6 +1022,15 @@ tests:
     extra_dtc_overlay_files:
     - ./boards/native_sim.overlay
     - ./ps8xxx/usbc.dts"
+  drivers.raa489000:
+    extra_configs:
+    - CONFIG_LINK_TEST_SUITE_RAA489000=y
+    extra_conf_files:
+    - prj.conf
+    - raa489000/prj.conf
+    extra_dtc_overlay_files:
+    - ./boards/native_sim.overlay
+    - ./raa489000/raa489000.dts
   drivers.rt1715:
     extra_configs:
     - CONFIG_LINK_TEST_SUITE_RT1715=y
