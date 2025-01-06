@@ -44,6 +44,12 @@ static atomic_t motion_sense_task_loops;
 /* When we started the task the last time */
 static timestamp_t ts_begin_task;
 
+/* motion_sense_task status flag
+ * motion_sense_task is running : true
+ * motion_sense_task is not running : false
+ */
+static bool motion_sense_task_status;
+
 /* Minimum time in between running motion sense task loop. */
 unsigned int motion_min_interval = CONFIG_MOTION_MIN_SENSE_WAIT_TIME * MSEC;
 STATIC_IF(CONFIG_CMD_ACCEL_INFO) int accel_disp;
@@ -909,6 +915,8 @@ void motion_sense_task(void *u)
 	if (IS_ENABLED(CONFIG_MOTION_FILL_LPC_SENSE_DATA)) {
 		lpc_status = host_get_memmap(EC_MEMMAP_ACC_STATUS);
 		set_present(lpc_status);
+	} else if (IS_ENABLED(CONFIG_HOST_INTERFACE_HECI)) {
+		motion_sense_task_status = true;
 	}
 
 	if (IS_ENABLED(CONFIG_ACCEL_FIFO)) {
@@ -1085,11 +1093,15 @@ static enum ec_status host_cmd_motion_sense(struct host_cmd_handler_args *args)
 
 	switch (in->cmd) {
 	case MOTIONSENSE_CMD_DUMP:
-		out->dump.module_flags =
-			(*(host_get_memmap(EC_MEMMAP_ACC_STATUS)) &
-			 EC_MEMMAP_ACC_STATUS_PRESENCE_BIT) ?
-				MOTIONSENSE_MODULE_FLAG_ACTIVE :
-				0;
+		if (IS_ENABLED(CONFIG_MOTION_FILL_LPC_SENSE_DATA)) {
+			out->dump.module_flags =
+				(*(host_get_memmap(EC_MEMMAP_ACC_STATUS)) &
+				 EC_MEMMAP_ACC_STATUS_PRESENCE_BIT) ?
+					MOTIONSENSE_MODULE_FLAG_ACTIVE :
+					0;
+		} else if (IS_ENABLED(CONFIG_HOST_INTERFACE_HECI)) {
+			out->dump.module_flags = motion_sense_task_status;
+		}
 		out->dump.sensor_count = ALL_MOTION_SENSORS;
 		args->response_size = sizeof(out->dump);
 		reported = MIN(ALL_MOTION_SENSORS, in->dump.max_sensor_count);
