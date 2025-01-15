@@ -299,7 +299,11 @@ enum pdo_augmented_pps {
 #define PD_T_BIST_CONT_MODE (55 * MSEC) /* 30ms to 60ms */
 #define PD_T_VCONN_SOURCE_ON (100 * MSEC) /* 100ms */
 #define PD_T_DRP_TRY (125 * MSEC) /* between 75ms and 150ms */
-#define PD_T_TRY_TIMEOUT (550 * MSEC) /* between 550ms and 1100ms */
+/* TODO(b/390238808): Setting this to 550 ms can result in the observed time in
+ * Try.SRC being as low as 549 ms. As a workaround, increase it slightly.
+ * Ideally, timers should be at least millisecond-accurate.
+ */
+#define PD_T_TRY_TIMEOUT (560 * MSEC) /* between 550ms and 1100ms */
 #define PD_T_TRY_WAIT (600 * MSEC) /* Wait time for TryWait.SNK */
 #define PD_T_SINK_REQUEST (100 * MSEC) /* 100ms before next request */
 #define PD_T_PD_DEBOUNCE (15 * MSEC) /* between 10ms and 20ms */
