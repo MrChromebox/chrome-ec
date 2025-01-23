@@ -79,6 +79,10 @@ static int panic_txchar(void *context, int c)
 
 void panic_puts(const char *outstr)
 {
+	/* Don't write to uart before it's initialized */
+	if (!uart_init_done())
+		return;
+
 	/* Flush the output buffer */
 	uart_flush_output();
 
@@ -103,6 +107,10 @@ void panic_puts(const char *outstr)
 void panic_printf(const char *format, ...)
 {
 	va_list args;
+
+	/* Don't write to uart before it's initialized */
+	if (!uart_init_done())
+		return;
 
 	/* Flush the output buffer */
 	uart_flush_output();

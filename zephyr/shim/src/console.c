@@ -138,6 +138,11 @@ void uart_shell_rx_bypass(bool enable)
 	rx_bypass_enabled = enable;
 }
 
+int uart_init_done(void)
+{
+	return uart_shell_dev->state->initialized;
+}
+
 int uart_shell_stop(void)
 {
 	struct k_poll_event event = K_POLL_EVENT_INITIALIZER(
