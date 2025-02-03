@@ -175,6 +175,7 @@ BOARDS_THAT_COMPILE_SUCCESSFULLY_WITH_CLANG = [
     "moli",
     "moonbuggy",
     "morphius",
+    "moxie",
     "mrbland",
     "nami",
     "nautilus",
