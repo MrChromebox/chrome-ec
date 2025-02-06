@@ -284,6 +284,7 @@ zephyr_library_sources_ifdef(CONFIG_PLATFORM_EC_PANIC
 zephyr_library_sources_ifdef(CONFIG_PLATFORM_EC_PWM
                                                 "${PLATFORM_EC}/common/pwm.c")
 zephyr_library_sources_ifdef(CONFIG_PLATFORM_EC_PRESERVED_RING_BUF "${PLATFORM_EC}/common/preserved_ring_buf.c")
+zephyr_library_sources_ifdef(CONFIG_PLATFORM_EC_PANIC_LOG "${PLATFORM_EC}/common/panic_log.c")
 zephyr_library_sources_ifdef(CONFIG_PLATFORM_EC_SHA256_SW
                                                 "${PLATFORM_EC}/common/sha256.c")
 zephyr_library_sources_ifdef(CONFIG_PLATFORM_EC_SWITCH

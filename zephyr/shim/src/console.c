@@ -7,6 +7,7 @@
 #include <drivers/uart.h>
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
+
 #include <stdbool.h>
 #include <string.h>
 #include <sys/printk.h>
@@ -15,6 +16,7 @@
 #include <logging/log.h>
 
 #include "console.h"
+#include "panic_log.h"
 #include "printf.h"
 #include "uart.h"
 #include "usb_console.h"
@@ -267,7 +269,15 @@ static void handle_sprintf_rv(int rv, size_t *len)
 
 static void zephyr_print(const char *buff, size_t size)
 {
-	/* shell_* functions can not be used in ISRs so use printk instead.
+	if (IS_ENABLED(CONFIG_PLATFORM_EC_PANIC_LOG)) {
+		panic_log_write_str(buff, size);
+	}
+
+	/*
+	 * shell_* functions can not be used in ISRs so optionally use
+	 * printk instead.
+	 * If the shell is about to be (or is) stopped, use printk, since the
+	 * output may be stalled and the shell mutex held.
 	 * Also, console_buf_notify_chars uses a mutex, which may not be
 	 * locked in ISRs.
 	 */
