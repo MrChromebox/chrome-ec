@@ -8,6 +8,7 @@
 #include <stdarg.h>
 
 #include "common.h"
+#include "panic_log.h"
 #include "console.h"
 #include "hooks.h"
 #include "host_command.h"
@@ -60,6 +61,9 @@ static int tx_next_snapshot_head;
 static int __tx_char(void *context, int c)
 {
 	int tx_buf_next, tx_buf_new_tail;
+
+	if (IS_ENABLED(CONFIG_PANIC_LOG))
+		panic_log_write_char(c);
 
 	/* Do newline to CRLF translation */
 	if (c == '\n' && __tx_char(NULL, '\r'))

@@ -4598,6 +4598,45 @@ struct ec_params_reboot_ec {
  */
 #define EC_CMD_VERSION0 0x00DC
 
+
+#define EC_CMD_PANIC_LOG_INFO 0x00E0
+
+/*
+ * Parameters for configuring the panic log.
+ * Freeze and unfreeze are mutually exclusive.
+ */
+struct ec_params_panic_log_info {
+	/* Reset panic log */
+	uint8_t reset;
+	/* Freeze panic log */
+	uint8_t freeze;
+	/* Unfreeze panic log */
+	uint8_t unfreeze;
+} __ec_align1;
+
+/*
+ * Returns the panic log info before applying the configuration
+ * in ec_params_panic_log_info.
+ */
+struct ec_response_panic_log_info {
+	uint32_t version;
+	uint32_t capacity;
+	uint32_t length;
+	uint8_t valid;
+	uint8_t frozen;
+} __ec_align4;
+
+#define EC_CMD_PANIC_LOG_READ 0x00E1
+
+/*
+ * Read from panic log at given byte offset. Will read up to the end of the
+ * panic log or response max. Use EC_CMD_PANIC_LOG_INFO command to freeze
+ * the log and get the length before reading.
+ */
+struct ec_params_panic_log_read {
+	uint32_t offset;
+} __ec_align4;
+
 /*****************************************************************************/
 /*
  * PD commands
