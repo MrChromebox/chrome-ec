@@ -120,4 +120,15 @@ extern const void *__data_end;
 #define __uncached
 #endif
 
+/* __noinit_end_of_ram may not be used in RO */
+#ifdef CONFIG_NOINIT_END_OF_RAM_SECTION
+#define __noinit_end_of_ram(name) \
+	__attribute__((section(".noinit_end_of_ram." STRINGIFY(name))))
+extern const char __noinit_end_of_ram_start[];
+extern const char __noinit_end_of_ram_end[];
+#else
+#define __noinit_end_of_ram(name) \
+	BUILD_ASSERT(0, "Attempting to use noinit_end_of_ram when disabled")
+#endif /* CONFIG_NOINIT_END_OF_RAM_SECTION */
+
 #endif /* __CROS_EC_LINK_DEFS_H */
