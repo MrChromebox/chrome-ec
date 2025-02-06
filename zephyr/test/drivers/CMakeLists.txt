@@ -13,3 +13,6 @@ FILE(GLOB test_sources src/*.c)
 target_sources(app PRIVATE ${test_sources})
 
 target_sources(app PRIVATE "${PLATFORM_EC}/test/cbi.c")
+
+# Add linked suites here
+add_subdirectory_ifdef(CONFIG_LINK_TEST_SUITE_PRESERVED_RING_BUF preserved_ring_buf)
