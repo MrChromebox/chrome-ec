@@ -14,3 +14,12 @@ zephyr_linker_sources(RAM_SECTIONS image_size.ld)
 # Little FW with specific purposes used by NPCX EC
 zephyr_linker_sources_ifdef(CONFIG_SOC_FAMILY_NPCX ROM_START SORT_KEY 1
   npcx-lfw.ld)
+
+if(DEFINED CONFIG_PLATFORM_EC_NOINIT_END_OF_RAM_SECTION)
+  if(DEFINED CONFIG_SOC_IT8XXX2)
+    # SOC_IT8XXX2 layout is special, snippets-sections.ld is included last.
+    zephyr_linker_sources(SECTIONS SORT_KEY zzz noinit-end-of-ram-section.ld)
+  else()
+    zephyr_linker_sources(NOINIT SORT_KEY zzz noinit-end-of-ram.ld)
+  endif()
+endif()
