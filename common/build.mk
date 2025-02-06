@@ -153,6 +153,7 @@ common-$(HAS_TASK_MOTIONSENSE)+=motion_sense.o
 common-$(HAS_TASK_TPM)+=tpm_registers.o
 common-$(CONFIG_SYSTEM_SAFE_MODE)+=system_safe_mode.o
 common-$(CONFIG_PRESERVED_RING_BUF)+=preserved_ring_buf.o
+common-$(CONFIG_PANIC_LOG)+=panic_log.o
 
 ifneq ($(CONFIG_COMMON_RUNTIME),)
 common-$(CONFIG_MALLOC)+=shmalloc.o
