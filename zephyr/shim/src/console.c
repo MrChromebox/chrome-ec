@@ -10,6 +10,7 @@
  */
 #include "builtin/stdio.h"
 #include "console.h"
+#include "panic_log.h"
 #include "printf.h"
 #include "task.h"
 #include "uart.h"
@@ -309,6 +310,10 @@ SYS_INIT(init_ec_console, PRE_KERNEL_1,
 #ifdef CONFIG_LOG_MODE_MINIMAL
 static int zephyr_shim_console_out(int c)
 {
+	if (IS_ENABLED(CONFIG_PLATFORM_EC_PANIC_LOG)) {
+		panic_log_write_char(c);
+	}
+
 	/* Always capture EC output into the AP console buffer. */
 	if (IS_ENABLED(CONFIG_PLATFORM_EC_HOSTCMD_CONSOLE) && !k_is_in_isr()) {
 		char console_char = c;
@@ -472,6 +477,10 @@ static void handle_sprintf_rv(int rv, size_t *len)
 
 static void zephyr_print(const char *buff, size_t size)
 {
+	if (IS_ENABLED(CONFIG_PLATFORM_EC_PANIC_LOG)) {
+		panic_log_write_str(buff, size);
+	}
+
 	/*
 	 * shell_* functions can not be used in ISRs so optionally use
 	 * printk instead.
