@@ -8,6 +8,7 @@
 
 #include "common.h"
 #include "ec_commands.h"
+#include "stdbool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -87,6 +88,14 @@ struct charge_port_info {
 	int current;
 	int voltage;
 };
+
+/**
+ * Check if the charge manager is seeded.
+ *
+ * @return	true if all ports/suppliers have reported
+ *		with some initial charge, false otherwise.
+ */
+bool charge_manager_is_seeded(void);
 
 /**
  * Called by charging tasks to update their available charge.

@@ -271,14 +271,14 @@ SYS_INIT(charge_manager_sys_init, POST_KERNEL,
  * @return	1 if all ports/suppliers have reported
  *		with some initial charge, 0 otherwise.
  */
-static int charge_manager_is_seeded(void)
+bool charge_manager_is_seeded(void)
 {
 	/* Once we're seeded, we don't need to check again. */
-	static int is_seeded;
+	static bool is_seeded;
 	int i, j;
 
 	if (is_seeded)
-		return 1;
+		return is_seeded;
 
 	for (i = 0; i < CHARGE_SUPPLIER_COUNT; ++i) {
 		for (j = 0; j < CHARGE_PORT_COUNT; ++j) {
@@ -291,8 +291,8 @@ static int charge_manager_is_seeded(void)
 				return 0;
 		}
 	}
-	is_seeded = 1;
-	return 1;
+	is_seeded = true;
+	return is_seeded;
 }
 
 int charge_manager_get_pd_current_uncapped(void)
