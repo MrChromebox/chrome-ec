@@ -44,6 +44,10 @@
 
 
 /* Sensors */
+/* Slew rate on the PP1800_A load switch requires a delay on resume */
+#undef CONFIG_MOTION_SENSE_RESUME_DELAY_US
+#define CONFIG_MOTION_SENSE_RESUME_DELAY_US (10 * MSEC)
+
 /* BMA253 accelerometer in base */
 #define CONFIG_ACCEL_BMA255
 #define CONFIG_ACCEL_KX022
