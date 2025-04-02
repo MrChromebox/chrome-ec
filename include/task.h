@@ -66,6 +66,11 @@ void interrupt_disable(void);
 void interrupt_enable(void);
 
 /**
+ * Check if interrupts are enabled
+ */
+int is_interrupt_enabled(void);
+
+/**
  * Return true if we are in interrupt context.
  */
 int in_interrupt_context(void);
