@@ -6,6 +6,7 @@
 /* Watchdog common code */
 
 #include "common.h"
+#include "cpu.h"
 #include "panic.h"
 #include "task.h"
 #include "timer.h"
@@ -17,7 +18,7 @@ void watchdog_trace(uint32_t excep_lr, uint32_t excep_sp)
 	uint32_t *stack;
 
 	asm("mrs %0, psp" : "=r"(psp));
-	if ((excep_lr & 0xf) == 1) {
+	if (is_frame_in_handler_stack(excep_lr)) {
 		/* we were already in exception context */
 		stack = (uint32_t *)excep_sp;
 	} else {
@@ -42,7 +43,7 @@ void watchdog_trace(uint32_t excep_lr, uint32_t excep_sp)
 
 	panic_printf("### WATCHDOG PC=%08x / LR=%08x / pSP=%08x ",
 		     stack[6], stack[5], psp);
-	if ((excep_lr & 0xf) == 1)
+	if (is_exception_from_handler_mode(excep_lr))
 		panic_puts("(exc) ###\n");
 	else
 		panic_printf("(task %d) ###\n", task_get_current());

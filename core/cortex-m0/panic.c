@@ -65,43 +65,36 @@ static void print_reg(int regnum, const uint32_t *regs, int index)
 }
 
 /*
- * Returns non-zero if the exception frame was created on the main stack, or
- * zero if it's on the process stack.
- *
- * See B1.5.8 "Exception return behavior" of ARM DDI 0403D for details.
- */
-static int32_t is_frame_in_handler_stack(const uint32_t exc_return)
-{
-	return exc_return == 0xfffffff1 || exc_return == 0xfffffff9;
-}
-
-/*
  * Print panic data
  */
 void panic_data_print(const struct panic_data *pdata)
 {
 	const uint32_t *lregs = pdata->cm.regs;
 	const uint32_t *sregs = NULL;
-	const int32_t in_handler =
-		is_frame_in_handler_stack(pdata->cm.regs[11]);
+	const uint32_t excep_lr = lregs[CORTEX_PANIC_REGISTER_LR];
 	int i;
 
 	if (pdata->flags & PANIC_DATA_FLAG_FRAME_VALID)
 		sregs = pdata->cm.frame;
 
 	panic_printf("\n=== %s EXCEPTION: %02x ====== xPSR: %08x ===\n",
-		     in_handler ? "HANDLER" : "PROCESS",
-		     lregs[1] & 0xff, sregs ? sregs[7] : -1);
+		     is_exception_from_handler_mode(excep_lr) ? "HANDLER" :
+								"PROCESS",
+		     lregs[CORTEX_PANIC_REGISTER_IPSR] & 0xff,
+		     sregs ? sregs[CORTEX_PANIC_FRAME_REGISTER_PSR] : -1);
 	for (i = 0; i < 4; i++)
 		print_reg(i, sregs, i);
 	for (i = 4; i < 10; i++)
 		print_reg(i, lregs, i - 1);
-	print_reg(10, lregs, 9);
-	print_reg(11, lregs, 10);
-	print_reg(12, sregs, 4);
-	print_reg(13, lregs, in_handler ? 2 : 0);
-	print_reg(14, sregs, 5);
-	print_reg(15, sregs, 6);
+	print_reg(10, lregs, CORTEX_PANIC_REGISTER_R10);
+	print_reg(11, lregs, CORTEX_PANIC_REGISTER_R11);
+	print_reg(12, sregs, CORTEX_PANIC_FRAME_REGISTER_R12);
+	print_reg(13, lregs,
+		  is_frame_in_handler_stack(excep_lr) ?
+			  CORTEX_PANIC_REGISTER_MSP :
+			  CORTEX_PANIC_REGISTER_PSP);
+	print_reg(14, sregs, CORTEX_PANIC_FRAME_REGISTER_LR);
+	print_reg(15, sregs, CORTEX_PANIC_FRAME_REGISTER_PC);
 }
 
 void __keep report_panic(void)
