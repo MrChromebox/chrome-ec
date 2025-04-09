@@ -43,6 +43,8 @@ void watchdog_init_warning_timer(void)
 	NPCX_ITCNT16(ITIM_WDG_NO) = CONFIG_AUX_TIMER_PERIOD_MS - 1;
 	/* Event module enable */
 	SET_BIT(NPCX_ITCTS(ITIM_WDG_NO), NPCX_ITCTS_ITEN);
+	/* Clear pending interrupt before enabling */
+	task_clear_pending_irq(ITIM16_INT(ITIM_WDG_NO));
 	/* Enable interrupt of ITIM */
 	task_enable_irq(ITIM16_INT(ITIM_WDG_NO));
 }
