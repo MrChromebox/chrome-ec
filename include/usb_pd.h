@@ -256,9 +256,9 @@ enum pdo_augmented_pps {
 #define PD_T_ENTER_EPR (500 * MSEC) /* between 450ms and 550ms */
 /*
  * Adjusting for TCPMv2 PD2 Compliance. In tests like TEST.PD.PROT.SRC.2 this
- * value is the duration before the Hard Reset can be sent. Setting the
- * timer value to the minimum to ensure that the TCPM actually sends any Hard
- * Reset between tSenderResponse min and max.
+ * value is the duration before the Hard Reset can be sent.
+ * The timer value was experimentally determined to pass TEST.PD.PROT.SNK.5 and
+ * TEST.PD.PROT.SRC.3 on various boards.
  * Leaving TCPMv1 as it was as there are no current requests to adjust
  * for compliance on the old stack and making this change breaks the
  * usb_pd unit test.
@@ -267,7 +267,7 @@ enum pdo_augmented_pps {
 #define PD_T_SENDER_RESPONSE (30 * MSEC) /* between 24ms and 30ms */
 #else
 /* PD R2.0 V1.3: between 24ms and 30ms */
-#define PD2_T_SENDER_RESPONSE (24 * MSEC)
+#define PD2_T_SENDER_RESPONSE (26 * MSEC)
 /*
  * PD R3.1 V1.5: between 26ms and 32ms
  * PD R3.2 V1.0: between 27ms and 33ms
