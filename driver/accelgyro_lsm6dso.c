@@ -179,7 +179,7 @@ static void push_fifo_data(struct motion_sensor_t *main_s, uint8_t *fifo,
 }
 
 static inline int load_fifo(struct motion_sensor_t *main_s,
-			    const uint16_t fifo_len)
+			    const uint16_t fifo_len, const uint32_t timestamp)
 {
 	uint8_t fifo[LSM6DSO_FIFO_SAMPLE_SIZE];
 	int i;
@@ -189,7 +189,7 @@ static inline int load_fifo(struct motion_sensor_t *main_s,
 			main_s->port, main_s->i2c_spi_addr_flags,
 			LSM6DSO_FIFO_DATA_ADDR_TAG, fifo, sizeof(fifo)));
 
-		push_fifo_data(main_s, fifo, last_interrupt_timestamp);
+		push_fifo_data(main_s, fifo, timestamp);
 	}
 
 	return EC_SUCCESS;
@@ -241,9 +241,10 @@ test_mockable void lsm6dso_interrupt(enum gpio_signal signal)
  */
 static int irq_handler(struct motion_sensor_t *s, uint32_t *event)
 {
-	int fifo_len = 0;
+	uint32_t interrupt_timestamp = last_interrupt_timestamp;
 	struct lsm6dso_fstatus fsts;
 	bool has_read_fifo = false;
+	int fifo_len = 0;
 
 	if ((s->type != MOTIONSENSE_TYPE_ACCEL) ||
 	    (!(*event & CONFIG_ACCEL_LSM6DSO_INT_EVENT)))
@@ -259,7 +260,8 @@ static int irq_handler(struct motion_sensor_t *s, uint32_t *event)
 
 		fifo_len = fsts.len & LSM6DSO_FIFO_DIFF_MASK;
 		if (fifo_len) {
-			RETURN_ERROR(load_fifo(s, fifo_len));
+			RETURN_ERROR(
+				load_fifo(s, fifo_len, interrupt_timestamp));
 			has_read_fifo = true;
 		}
 	} while (fifo_len != 0);

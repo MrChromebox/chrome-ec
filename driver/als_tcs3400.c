@@ -498,6 +498,7 @@ static int tcs3400_post_events(struct motion_sensor_t *s, uint32_t last_ts,
  */
 static int tcs3400_irq_handler(struct motion_sensor_t *s, uint32_t *event)
 {
+	uint32_t interrupt_timestamp = last_interrupt_timestamp;
 	uint32_t status = 0;
 	int ret;
 
@@ -515,7 +516,7 @@ static int tcs3400_irq_handler(struct motion_sensor_t *s, uint32_t *event)
 
 	if ((status & TCS_I2C_STATUS_RGBC_VALID) ||
 	    IS_ENABLED(CONFIG_ALS_TCS3400_EMULATED_IRQ_EVENT)) {
-		ret = tcs3400_post_events(s, last_interrupt_timestamp, status);
+		ret = tcs3400_post_events(s, interrupt_timestamp, status);
 		if (ret)
 			return ret;
 	}

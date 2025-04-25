@@ -142,6 +142,7 @@ void lis2ds_interrupt(enum gpio_signal signal)
  */
 static int lis2ds_irq_handler(struct motion_sensor_t *s, uint32_t *event)
 {
+	uint32_t interrupt_timestamp = last_interrupt_timestamp;
 	int ret = EC_SUCCESS;
 	uint16_t nsamples = 0;
 	uint8_t fifo_src_samples[2];
@@ -166,7 +167,7 @@ static int lis2ds_irq_handler(struct motion_sensor_t *s, uint32_t *event)
 	if (fifo_src_samples[0] & LIS2DS_FIFO_DIFF8_MASK)
 		nsamples = 256;
 
-	return lis2ds_load_fifo(s, nsamples, last_interrupt_timestamp);
+	return lis2ds_load_fifo(s, nsamples, interrupt_timestamp);
 }
 
 #endif /* ACCEL_LIS2DS_INT_ENABLE */

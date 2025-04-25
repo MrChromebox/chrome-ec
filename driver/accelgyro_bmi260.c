@@ -357,6 +357,7 @@ void bmi260_interrupt(enum gpio_signal signal)
  */
 static int irq_handler(struct motion_sensor_t *s, uint32_t *event)
 {
+	uint32_t interrupt_timestamp = last_interrupt_timestamp;
 	/* use uint16_t interrupt can cause error. */
 	uint32_t interrupt = 0;
 	int8_t has_read_fifo = 0;
@@ -387,7 +388,7 @@ static int irq_handler(struct motion_sensor_t *s, uint32_t *event)
 			break;
 
 		if (interrupt & (BMI260_FWM_INT | BMI260_FFULL_INT)) {
-			bmi_load_fifo(s, last_interrupt_timestamp);
+			bmi_load_fifo(s, interrupt_timestamp);
 			has_read_fifo = 1;
 		}
 	}

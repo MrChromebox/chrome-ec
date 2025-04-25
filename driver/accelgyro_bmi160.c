@@ -519,6 +519,7 @@ void bmi160_interrupt(enum gpio_signal signal)
  */
 static int irq_handler(struct motion_sensor_t *s, uint32_t *event)
 {
+	uint32_t interrupt_timestamp = last_interrupt_timestamp;
 	uint32_t interrupt;
 	int8_t has_read_fifo = 0;
 	int rv;
@@ -556,7 +557,7 @@ static int irq_handler(struct motion_sensor_t *s, uint32_t *event)
 			*event |= TASK_EVENT_MOTION_ACTIVITY_INTERRUPT(
 				MOTIONSENSE_ACTIVITY_SIG_MOTION);
 		if (interrupt & (BMI160_FWM_INT | BMI160_FFULL_INT)) {
-			bmi_load_fifo(s, last_interrupt_timestamp);
+			bmi_load_fifo(s, interrupt_timestamp);
 			has_read_fifo = 1;
 		}
 		if (IS_ENABLED(CONFIG_BMI_ORIENTATION_SENSOR))

@@ -324,6 +324,7 @@ static void bmi3_parse_fifo_data(struct motion_sensor_t *s,
  */
 static int irq_handler(struct motion_sensor_t *s, uint32_t *event)
 {
+	uint32_t interrupt_timestamp = last_interrupt_timestamp;
 	bool has_read_fifo = false;
 	uint16_t int_status[2];
 	uint16_t reg_data[2];
@@ -390,7 +391,7 @@ static int irq_handler(struct motion_sensor_t *s, uint32_t *event)
 		if (rv)
 			break;
 
-		bmi3_parse_fifo_data(s, &fifo_frame, last_interrupt_timestamp);
+		bmi3_parse_fifo_data(s, &fifo_frame, interrupt_timestamp);
 		has_read_fifo = true;
 	}
 

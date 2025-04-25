@@ -277,6 +277,7 @@ void icm426xx_interrupt(enum gpio_signal signal)
  */
 static int icm426xx_irq_handler(struct motion_sensor_t *s, uint32_t *event)
 {
+	uint32_t interrupt_timestamp = last_interrupt_timestamp;
 	int status;
 	int ret;
 
@@ -292,7 +293,7 @@ static int icm426xx_irq_handler(struct motion_sensor_t *s, uint32_t *event)
 		goto out_unlock;
 
 	if (status & ICM426XX_FIFO_INT_STATUS) {
-		ret = icm426xx_load_fifo(s, last_interrupt_timestamp);
+		ret = icm426xx_load_fifo(s, interrupt_timestamp);
 		if (IS_ENABLED(CONFIG_ACCEL_FIFO) && (ret == EC_SUCCESS))
 			motion_sense_fifo_commit_data();
 	}

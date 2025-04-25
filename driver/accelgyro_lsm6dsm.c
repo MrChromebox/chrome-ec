@@ -330,9 +330,9 @@ static void push_fifo_data(struct motion_sensor_t *accel, uint8_t *fifo,
 	}
 }
 
-static int load_fifo(struct motion_sensor_t *s, const struct fstatus *fsts)
+static int load_fifo(struct motion_sensor_t *s, const struct fstatus *fsts,
+		     const uint32_t timestamp)
 {
-	uint32_t interrupt_timestamp = last_interrupt_timestamp;
 	int err, left, length;
 	uint8_t fifo[FIFO_READ_LEN];
 
@@ -365,7 +365,7 @@ static int load_fifo(struct motion_sensor_t *s, const struct fstatus *fsts)
 		 * where we empty the FIFO, and a new IRQ comes in between
 		 * reading the last sample and pushing it into the FIFO.
 		 */
-		push_fifo_data(s, fifo, length, interrupt_timestamp);
+		push_fifo_data(s, fifo, length, timestamp);
 		left -= length;
 	} while (left > 0);
 
@@ -387,6 +387,7 @@ test_mockable void lsm6dsm_interrupt(enum gpio_signal signal)
  */
 static int irq_handler(struct motion_sensor_t *s, uint32_t *event)
 {
+	uint32_t interrupt_timestamp = last_interrupt_timestamp;
 	struct fstatus fsts;
 	int fifo_empty = false;
 	bool commit_needed = false;
@@ -405,7 +406,7 @@ static int irq_handler(struct motion_sensor_t *s, uint32_t *event)
 		fifo_empty = fsts.len & LSM6DSM_FIFO_EMPTY;
 		if (!fifo_empty) {
 			commit_needed = true;
-			RETURN_ERROR(load_fifo(s, &fsts));
+			RETURN_ERROR(load_fifo(s, &fsts, interrupt_timestamp));
 		}
 	}
 	if (IS_ENABLED(CONFIG_ACCEL_FIFO) && commit_needed)
