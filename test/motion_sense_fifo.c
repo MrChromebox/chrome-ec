@@ -285,19 +285,19 @@ static int test_spread_data_in_window(void)
 	motion_sense_set_data_period(0, 20 /* us */);
 	now = __hw_clock_source_read();
 
-	motion_sense_fifo_stage_data(data, motion_sensors, 3, now - 18);
-	motion_sense_fifo_stage_data(data, motion_sensors, 3, now - 18);
+	motion_sense_fifo_stage_data(data, motion_sensors, 3, now - 22);
+	motion_sense_fifo_stage_data(data, motion_sensors, 3, now - 22);
 	motion_sense_fifo_commit_data();
 	read_count = motion_sense_fifo_read(
 		sizeof(data), CONFIG_ACCEL_FIFO_SIZE, data, &data_bytes_read);
 	TEST_EQ(read_count, 4, "%d");
 	TEST_BITS_SET(data[0].flags, MOTIONSENSE_SENSOR_FLAG_TIMESTAMP);
-	TEST_EQ(data[0].timestamp, now - 18, "%u");
+	TEST_EQ(data[0].timestamp, now - 22, "%u");
 	TEST_BITS_SET(data[2].flags, MOTIONSENSE_SENSOR_FLAG_TIMESTAMP);
 	/* TODO(b/142892004): mock __hw_clock_source_read so we can check for
 	 * exact TS.
 	 */
-	TEST_NEAR(data[2].timestamp, now, 2, "%u");
+	TEST_NEAR(data[2].timestamp, now - 2, 2, "%u");
 
 	return EC_SUCCESS;
 }

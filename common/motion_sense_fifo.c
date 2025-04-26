@@ -72,12 +72,6 @@ static struct timestamp_state next_timestamp[MAX_MOTION_SENSORS];
 static uint32_t expected_data_periods[MAX_MOTION_SENSORS];
 
 /**
- * Calculated data periods:
- * can be different from collection rate when spreading.
- */
-static uint32_t data_periods[MAX_MOTION_SENSORS];
-
-/**
  * Bitmap telling which sensors have valid entries in the next_timestamp array.
  */
 static uint32_t next_timestamp_initialized;
@@ -494,7 +488,7 @@ void motion_sense_fifo_stage_data(struct ec_response_motion_sensor_data *data,
 void motion_sense_fifo_commit_data(void)
 {
 	struct ec_response_motion_sensor_data *data;
-	int i, window, sensor_num;
+	int i, sensor_num;
 
 	/* Nothing staged, no work to do. */
 	if (!fifo_staged.count)
@@ -520,29 +514,6 @@ void motion_sense_fifo_commit_data(void)
 	if (!is_timestamp(data)) {
 		CPRINTS("Spreading skipped, first entry is not a timestamp");
 		fifo_staged.requires_spreading = 0;
-		goto commit_data_end;
-	}
-
-	window = time_until(data->timestamp, fifo_staged.read_ts);
-
-	/* Update the data_periods as needed for this flush. */
-	for (i = 0; i < MAX_MOTION_SENSORS; i++) {
-		int period;
-
-		/* Skip empty sensors. */
-		if (!fifo_staged.sample_count[i])
-			continue;
-
-		period = expected_data_periods[i];
-		/*
-		 * Clamp the sample period to the MIN of collection_rate and the
-		 * window length / (sample count - 1).
-		 */
-		if (window && fifo_staged.sample_count[i] > 1)
-			period =
-				MIN(period,
-				    window / (fifo_staged.sample_count[i] - 1));
-		data_periods[i] = period;
 	}
 
 commit_data_end:
@@ -589,7 +560,7 @@ commit_data_end:
 		 */
 		if (is_new_timestamp(sensor_num) ||
 		    time_after(data->timestamp,
-			       next_timestamp[sensor_num].prev)) {
+			       next_timestamp[sensor_num].next)) {
 			next_timestamp[sensor_num].next = data->timestamp;
 			next_timestamp_initialized |= BIT(sensor_num);
 		}
@@ -599,9 +570,7 @@ commit_data_end:
 		next_timestamp[sensor_num].prev =
 			next_timestamp[sensor_num].next;
 		next_timestamp[sensor_num].next +=
-			fifo_staged.requires_spreading ?
-				data_periods[sensor_num] :
-				expected_data_periods[sensor_num];
+			expected_data_periods[sensor_num];
 
 		/* Update online calibration if enabled. */
 		data = peek_fifo_staged(i);
