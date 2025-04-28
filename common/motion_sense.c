@@ -1091,6 +1091,10 @@ static enum ec_status host_cmd_motion_sense(struct host_cmd_handler_args *args)
 	void *out_offset;
 	int16_t out_temp;
 
+	if (motion_sensor_count == 0) {
+		return EC_RES_INVALID_COMMAND;
+	}
+
 	switch (in->cmd) {
 	case MOTIONSENSE_CMD_DUMP:
 		if (IS_ENABLED(CONFIG_MOTION_FILL_LPC_SENSE_DATA)) {
