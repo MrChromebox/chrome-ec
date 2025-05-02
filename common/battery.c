@@ -441,9 +441,16 @@ static void ac_change(void)
 		key = keyboard_scan_get_boot_keys() == BIT(BOOT_KEY_REFRESH);
 
 #ifdef CONFIG_VOLUME_BUTTONS
-	if (!key)
+	if (!key) {
 		/* Strictly vol-up only. */
 		key = button_get_boot_button() == BIT(BUTTON_VOLUME_UP);
+		if (IS_ENABLED(CONFIG_BATTERY_CUTOFF_VOL_UP_DISABLED) && key) {
+			key = 0;
+			CUTOFFPRINTS(
+				"VOL_UP Battery Cutoff sequence disabled for this device, "
+				"use REFRESH key sequence");
+		}
+	}
 #endif
 
 	if (!key) {

@@ -166,6 +166,12 @@ config PLATFORM_EC_BATTERY_CUTOFF_TIMEOUT_MSEC
 	  After the EC executes battery cutoff, it'll wait for this amount of
 	  time in msec before deciding the cutoff failed.
 
+config PLATFORM_EC_BATTERY_CUTOFF_VOL_UP_DISABLED
+	bool "Disable Volume Up button sequence for battery cutoff"
+	default n
+	help
+	  Disable volume up button sequence to trigger battery cutoff.
+
 config PLATFORM_EC_BATTERY_FUEL_GAUGE
 	bool "Board supplies battery info"
 	help
