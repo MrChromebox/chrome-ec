@@ -261,12 +261,20 @@
 #define PD_POWER_SUPPLY_TURN_ON_DELAY 30000 /* us */
 #define PD_POWER_SUPPLY_TURN_OFF_DELAY 250000 /* us */
 
+#if defined(VARIANT_DEDEDE_EC_IT8320) || defined(VARIANT_KEEBY_EC_IT8320)
+/* WDT period cannot be longer than WDT period configured in RO
+ * for IT8320 variants (b/416109671) */
+#undef CONFIG_WATCHDOG_PERIOD_MS
+#define CONFIG_WATCHDOG_PERIOD_MS 1600
+#elif defined(VARIANT_DEDEDE_EC_NPCX796FC) || \
+	defined(VARIANT_KEEBY_EC_NPCX797FC)
 /* System safe mode for improved panic debugging */
 #define CONFIG_SYSTEM_SAFE_MODE
 #define CONFIG_PANIC_ON_WATCHDOG_WARNING
 /* Increase watchdog timeout since system will panic on warning */
 #undef CONFIG_WATCHDOG_PERIOD_MS
 #define CONFIG_WATCHDOG_PERIOD_MS 2100
+#endif
 
 #ifndef __ASSEMBLER__
 
