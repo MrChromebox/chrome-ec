@@ -6,6 +6,7 @@
 /* Watchdog driver */
 
 #include "common.h"
+#include "console.h"
 #include "cpu.h"
 #include "hooks.h"
 #include "hwtimer_chip.h"
@@ -92,6 +93,11 @@ int watchdog_init(void)
 	/* Unlock access to watchdog registers. */
 	IT83XX_ETWD_ETWCFG = 0x00;
 
+	if (IT83XX_ETWD_ETWCFG) {
+		ccprintf("[WDT]: ETWCFG register is locked!"
+			 " watchdog counter cannot be changed.\n");
+	}
+
 	/* Set WD timer to use 1.024kHz clock. */
 	IT83XX_ETWD_ET1PSR = 0x01;
 
@@ -119,8 +125,8 @@ int watchdog_init(void)
 	IT83XX_ETWD_EWDCNTLHR = (wdt_count >> 8) & 0xff;
 	IT83XX_ETWD_EWDCNTLLR = wdt_count & 0xff;
 
-	/* Lock access to watchdog registers. */
-	IT83XX_ETWD_ETWCFG = 0x3f;
+	/* Lock access to watchdog registers, but not the ETWCFG reg itself. */
+	IT83XX_ETWD_ETWCFG = 0x3e;
 
 	return EC_SUCCESS;
 }
