@@ -3110,6 +3110,12 @@
 #undef CONFIG_IT83XX_PREWDT_ALWAYS_ENABLED
 
 /*
+ * For IT83xx boards shipped with Watchdog timer locked in RO this config
+ * allows to extend the duration of Watchdog timer by resetting it once.
+ */
+#undef CONFIG_IT83XX_LOCKED_WATCHDOG_EXTENSION
+
+/*
  * Support the standard integer multiplication and division instruction
  * extension.
  */
