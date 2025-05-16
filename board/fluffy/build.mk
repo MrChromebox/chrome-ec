@@ -13,6 +13,6 @@ CHIP_VARIANT:=stm32f07x
 # Use coreboot-sdk
 $(call set-option,CROSS_COMPILE_arm,\
 	$(CROSS_COMPILE_coreboot_sdk_arm),\
-	/opt/coreboot-sdk/bin/arm-eabi-)
+	arm-none-eabi-)
 
 board-y=board.o

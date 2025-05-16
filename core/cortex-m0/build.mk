@@ -9,7 +9,7 @@
 # Use coreboot-sdk
 $(call set-option,CROSS_COMPILE,\
 	$(CROSS_COMPILE_arm),\
-	/opt/coreboot-sdk/bin/arm-eabi-)
+	arm-none-eabi-)
 
 # CPU specific compilation flags
 CFLAGS_CPU+=-mthumb -Os -mno-sched-prolog

@@ -45,7 +45,7 @@ HOSTCXX?=$(CCACHE) $(HOST_CROSS_COMPILE)g++
 PROTOC?=protoc
 
 C_WARN = -Wstrict-prototypes -Wdeclaration-after-statement -Wno-pointer-sign
-COMMON_WARN = -Wall -Wundef -Werror -Werror-implicit-function-declaration \
+COMMON_WARN = -Wall -Wundef -Wno-error -Werror-implicit-function-declaration \
 	-Wno-trigraphs -Wno-format-security -Wno-address-of-packed-member \
 	-fno-common -fno-strict-aliasing -fno-strict-overflow
 

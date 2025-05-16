@@ -81,7 +81,7 @@
 #endif
 
 /*
- * externally_visible is required by GCC to avoid kicking out memset.
+ * externally_visible is required by GCC to avoid kicking out memset/memcpy.
  */
 #ifndef __visible
 #ifndef __clang__

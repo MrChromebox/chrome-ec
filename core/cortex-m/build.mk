@@ -9,7 +9,7 @@
 # Use coreboot-sdk
 $(call set-option,CROSS_COMPILE,\
 	$(CROSS_COMPILE_arm),\
-	/opt/coreboot-sdk/bin/arm-eabi-)
+	arm-none-eabi-)
 
 # FPU compilation flags
 CFLAGS_FPU-$(CONFIG_FPU)=-mfpu=fpv4-sp-d16 -mfloat-abi=hard

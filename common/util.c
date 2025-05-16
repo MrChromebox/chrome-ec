@@ -283,7 +283,7 @@ int safe_memcmp(const void *s1, const void *s2, size_t size)
 }
 
 #if !(__has_feature(address_sanitizer) || __has_feature(memory_sanitizer))
-__stdlib_compat void *memcpy(void *dest, const void *src, size_t len)
+__stdlib_compat __visible void *memcpy(void *dest, const void *src, size_t len)
 {
 	char *d = (char *)dest;
 	const char *s = (const char *)src;
