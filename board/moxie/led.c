@@ -84,9 +84,11 @@ static int set_color(enum ec_led_id id, enum led_color color, int duty)
 	}
 }
 
-#define LED_PULSE_US (2 * SECOND)
-/* 40 msec for nice and smooth transition. */
-#define LED_PULSE_TICK_US (40 * MSEC)
+#define LED_PULSE_PERIOD_US (4 * SECOND)
+#define LED_DUTY_CYCLE (25)
+#define LED_PULSE_US (LED_PULSE_PERIOD_US * LED_DUTY_CYCLE / 100 / 2)
+/* 10 msec for nice and smooth transition. */
+#define LED_PULSE_TICK_US (10 * MSEC)
 
 /*
  * When pulsing is enabled, brightness is incremented by <duty_inc> every
@@ -98,17 +100,25 @@ static struct {
 	int duty_inc;
 	enum led_color color;
 	int duty;
+	uint32_t time_off;
 } led_pulse;
 
-#define CONFIG_TICK(interval, color) \
-	config_tick((interval), 100 / (LED_PULSE_US / (interval)), (color))
+/* LED_PULSE_PERIOD_US = time_on + time_off;
+ * time_on = LED_PULSE_US * 2;
+ * time_off = LED_PULSE_PERIOD_US - LED_PULSE_US * 2;
+ */
+#define CONFIG_TICK(interval, pulse_period, color)                 \
+	config_tick((interval), 100 / (LED_PULSE_US / (interval)), \
+		    LED_PULSE_PERIOD_US - LED_PULSE_US * 2, (color))
 
-static void config_tick(uint32_t interval, int duty_inc, enum led_color color)
+static void config_tick(uint32_t interval, int duty_inc, int time_off,
+			enum led_color color)
 {
 	led_pulse.interval = interval;
 	led_pulse.duty_inc = duty_inc;
 	led_pulse.color = color;
 	led_pulse.duty = 0;
+	led_pulse.time_off = time_off;
 }
 
 static void pulse_power_led(enum led_color color)
@@ -133,12 +143,15 @@ static void led_tick(void)
 		pulse_power_led(led_pulse.color);
 	elapsed = get_time().le.lo - start;
 	next = led_pulse.interval > elapsed ? led_pulse.interval - elapsed : 0;
+	next = (led_pulse.duty - led_pulse.duty_inc) ?
+		       next :
+		       next + led_pulse.time_off;
 	hook_call_deferred(&led_tick_data, next);
 }
 
 static void led_suspend(void)
 {
-	CONFIG_TICK(LED_PULSE_TICK_US, LED_BLUE);
+	CONFIG_TICK(LED_PULSE_TICK_US, LED_PULSE_PERIOD_US, LED_BLUE);
 	led_tick();
 }
 DECLARE_DEFERRED(led_suspend);
@@ -196,7 +209,7 @@ void led_alert(int enable)
 {
 	if (enable) {
 		/* Overwrite the current signal */
-		config_tick(1 * SECOND, 100, LED_RED);
+		config_tick(1 * SECOND, 100, 0, LED_RED);
 		led_tick();
 	} else {
 		/* Restore the previous signal */
