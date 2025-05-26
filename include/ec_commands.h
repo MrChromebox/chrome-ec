@@ -272,6 +272,16 @@ extern "C" {
 #define EC_BATT_FLAG_INVALID_DATA 0x20
 #define EC_BATT_FLAG_CUT_OFF 0x40
 
+/*
+ * Value written to EC_MEMMAP_BATT_DCAP, EC_MEMMAP_BATT_DVLT, EC_MEMMAP_CCNT,
+ * EC_MEMMAP_BATT_VOLT, EC_MEMMAP_BATT_RATE, EC_MEMMAP_BATT_CAP, and
+ * EC_MEMMAP_BATT_LFCC if the actual value is unknown.
+ *
+ * This corresponds with the unknown value specified by ACPI release 6.5
+ * §10.2.2 (and earlier versions), to match expectations of ACPI firmware.
+ */
+#define EC_MEMMAP_BATT_UNKNOWN_VALUE (-1)
+
 /* Switch flags at EC_MEMMAP_SWITCHES */
 #define EC_SWITCH_LID_OPEN 0x01
 #define EC_SWITCH_POWER_BUTTON_PRESSED 0x02

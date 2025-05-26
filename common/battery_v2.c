@@ -74,14 +74,34 @@ static void battery_update(enum battery_index i)
 	memcpy(batt_str, battery_static[i].type_ext, EC_MEMMAP_TEXT_MAX);
 	batt_str[EC_MEMMAP_TEXT_MAX - 1] = 0;
 
-	*memmap_volt = battery_dynamic[i].actual_voltage;
 	/*
-	 * Rate must be absolute, flags will indicate whether
-	 * the battery is charging or discharging.
+	 * If any of the dynamic info is invalid, conservatively report all of
+	 * the values as unknown because the flags aren't specific enough to
+	 * know which value(s) are invalid.
+	 *
+	 * The charger keeps more detailed validity flags for each field, but
+	 * that updates independently of battery_dynamic so we can't use those
+	 * flags to present whatever data we do have because the charger's
+	 * current flags may not match what's actually in battery_dynamic right
+	 * now.
 	 */
-	*memmap_rate = ABS(battery_dynamic[i].actual_current);
-	*memmap_cap = battery_dynamic[i].remaining_capacity;
-	*memmap_lfcc = battery_dynamic[i].full_capacity;
+	if (battery_dynamic[i].flags & EC_BATT_FLAG_INVALID_DATA) {
+		*memmap_volt = EC_MEMMAP_BATT_UNKNOWN_VALUE;
+		*memmap_rate = EC_MEMMAP_BATT_UNKNOWN_VALUE;
+		*memmap_cap = EC_MEMMAP_BATT_UNKNOWN_VALUE;
+		*memmap_lfcc = EC_MEMMAP_BATT_UNKNOWN_VALUE;
+	} else {
+		*memmap_volt = battery_dynamic[i].actual_voltage;
+		/*
+		 * Rate must be absolute, flags will indicate whether
+		 * the battery is charging or discharging.
+		 */
+		*memmap_rate = ABS(battery_dynamic[i].actual_current);
+		*memmap_cap = battery_dynamic[i].remaining_capacity;
+		*memmap_lfcc = battery_dynamic[i].full_capacity;
+	}
+
+	/* Flags are always valid, even if no other dynamic field is. */
 	*memmap_flags = battery_dynamic[i].flags;
 }
 
@@ -284,9 +304,11 @@ int update_static_battery_info(void)
 	    !is_battery_string_reliable(bs->type_ext))
 		rv |= EC_ERROR_UNKNOWN;
 
-	/* Zero the dynamic entries. They'll come next. */
+	/* Clear dynamic data, which will be updated next. For now all data
+	 * is invalid and should not be trusted. */
 	memset(&battery_dynamic[BATT_IDX_MAIN], 0,
 	       sizeof(battery_dynamic[BATT_IDX_MAIN]));
+	battery_dynamic[BATT_IDX_MAIN].flags = EC_BATT_FLAG_INVALID_DATA;
 
 	if (rv)
 		charge_problem(PR_STATIC_UPDATE, rv);
