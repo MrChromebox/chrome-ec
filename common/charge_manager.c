@@ -44,8 +44,6 @@
 #define POWER_SWAP_TIMEOUT \
 	(PD_T_SRC_RECOVER_MAX + PD_T_SRC_TURN_ON + PD_T_SAFE_0V + 500 * MSEC)
 
-K_MUTEX_DEFINE(cm_refresh);
-
 /*
  * Default charge supplier priority
  *
@@ -108,7 +106,11 @@ static enum dualrole_capabilities dualrole_capability[CHARGE_PORT_COUNT];
 static int save_log[CHARGE_PORT_COUNT];
 #endif
 
+K_MUTEX_DEFINE(cm_refresh);
+
 /* Store current state of port enable / charge current. */
+/* During charge_manager_refresh, the following data is considered stale. Make
+ * sure any read/writes are protected with cm_refresh mutex */
 test_export_static int charge_port = CHARGE_PORT_NONE;
 static int charge_current = CHARGE_CURRENT_UNINITIALIZED;
 static int charge_current_uncapped = CHARGE_CURRENT_UNINITIALIZED;
@@ -365,6 +367,7 @@ static enum charge_supplier get_current_supplier(int port)
 {
 	enum charge_supplier supplier = CHARGE_SUPPLIER_NONE;
 
+	mutex_lock(&cm_refresh);
 	/* Determine supplier information to show. */
 	if (port == charge_port) {
 		supplier = charge_supplier;
@@ -375,6 +378,7 @@ static enum charge_supplier get_current_supplier(int port)
 			/* Ignore available current */
 			supplier = find_supplier(port, supplier, -1);
 	}
+	mutex_unlock(&cm_refresh);
 
 	return supplier;
 }
@@ -382,6 +386,9 @@ static enum usb_power_roles
 get_current_power_role(int port, enum charge_supplier supplier)
 {
 	enum usb_power_roles role;
+
+	mutex_lock(&cm_refresh);
+
 	if (charge_port == port)
 		role = USB_PD_PORT_POWER_SINK;
 	else if (is_connected(port) && !is_sink(port))
@@ -390,6 +397,9 @@ get_current_power_role(int port, enum charge_supplier supplier)
 		role = USB_PD_PORT_POWER_SINK_NOT_CHARGING;
 	else
 		role = USB_PD_PORT_POWER_DISCONNECTED;
+
+	mutex_unlock(&cm_refresh);
+
 	return role;
 }
 
@@ -1327,6 +1337,7 @@ void charge_manager_set_ceil(int port, enum ceil_requestor requestor, int ceil)
 
 void charge_manager_force_ceil(int port, int ceil)
 {
+	mutex_lock(&cm_refresh);
 	/*
 	 * Force our input current to ceil if we're exceeding it, without
 	 * waiting for our deferred task to run.
@@ -1354,6 +1365,7 @@ void charge_manager_force_ceil(int port, int ceil)
 		 */
 		charge_manager_set_ceil(port, CEIL_REQUESTOR_PD, ceil);
 	}
+	mutex_unlock(&cm_refresh);
 }
 
 int charge_manager_set_override(int port)
@@ -1406,7 +1418,13 @@ int charge_manager_get_override(void)
 
 int charge_manager_get_active_charge_port(void)
 {
-	return charge_port;
+	int retval = 0;
+
+	mutex_lock(&cm_refresh);
+	retval = charge_port;
+	mutex_unlock(&cm_refresh);
+
+	return retval;
 }
 
 int charge_manager_get_selected_charge_port(void)
@@ -1419,23 +1437,43 @@ int charge_manager_get_selected_charge_port(void)
 
 int charge_manager_get_charger_current(void)
 {
-	return charge_current;
+	int retval = 0;
+
+	mutex_lock(&cm_refresh);
+	retval = charge_current;
+	mutex_unlock(&cm_refresh);
+
+	return retval;
 }
 
 int charge_manager_get_charger_voltage(void)
 {
-	return charge_voltage;
+	int retval = 0;
+
+	mutex_lock(&cm_refresh);
+	retval = charge_voltage;
+	mutex_unlock(&cm_refresh);
+
+	return retval;
 }
 
 enum charge_supplier charge_manager_get_supplier(void)
 {
-	return charge_supplier;
+	int retval = 0;
+
+	mutex_lock(&cm_refresh);
+	retval = charge_supplier;
+	mutex_unlock(&cm_refresh);
+
+	return retval;
 }
 
 void charge_manager_set_supplier(int port, enum charge_supplier supplier)
 {
+	mutex_lock(&cm_refresh);
 	if (charge_supplier != CHARGE_SUPPLIER_NONE ||
 	    charge_port != CHARGE_PORT_NONE) {
+		mutex_unlock(&cm_refresh);
 		return;
 	}
 
@@ -1444,12 +1482,18 @@ void charge_manager_set_supplier(int port, enum charge_supplier supplier)
 
 	charge_port = port;
 	charge_supplier = supplier;
+	mutex_unlock(&cm_refresh);
 }
 
 int charge_manager_get_power_limit_uw(void)
 {
-	int current_ma = charge_current;
-	int voltage_mv = charge_voltage;
+	int current_ma = 0;
+	int voltage_mv = 0;
+
+	mutex_lock(&cm_refresh);
+	current_ma = charge_current;
+	voltage_mv = charge_voltage;
+	mutex_unlock(&cm_refresh);
 
 	if (current_ma == CHARGE_CURRENT_UNINITIALIZED ||
 	    voltage_mv == CHARGE_VOLTAGE_UNINITIALIZED)
