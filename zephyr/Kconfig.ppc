@@ -174,7 +174,7 @@ config PLATFORM_EC_USBC_PPC_SYV682C
 config PLATFORM_EC_USBC_PPC_SYV682X_HV_ILIM
 	int "SYV682X high-voltage current limit"
 	depends on PLATFORM_EC_USBC_PPC_SYV682X
-	default 2
+	default 3
 	help
 	  SYV682x PPC high voltage power path current limit. Valid values are
 	  0 (1.25A), 1 (1.75A), 2 (3.3A), or 3 (5.5A). See syv682x.h.

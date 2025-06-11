@@ -5429,10 +5429,11 @@
 #undef CONFIG_USBC_PPC_SYV682X_OVP_SET_15V
 
 /*
- * SYV682x PPC high voltage power path current limit.  Default limit is
- * 3.3A.  See the syv682x header file for permissible values.
+ * SYV682x PPC high voltage power path current limit. The hardware default is
+ * 3.3A, but this results in spurious OCP events. Default to 5.5A in software.
+ * See b/349015641 for details. See the syv682x header file for possible values.
  */
-#define CONFIG_SYV682X_HV_ILIM SYV682X_HV_ILIM_3_30
+#define CONFIG_SYV682X_HV_ILIM SYV682X_HV_ILIM_5_50
 
 /* SYV682 does not pass through CC, instead it bypasses to the TCPC */
 #undef CONFIG_USBC_PPC_SYV682X_NO_CC
