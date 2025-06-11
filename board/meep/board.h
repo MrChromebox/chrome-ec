@@ -27,8 +27,8 @@
 #define CONFIG_EC_FEATURE_BOARD_OVERRIDE
 
 /* Sensors */
-#define CONFIG_ACCEL_KX022		/* Lid accel */
-#define CONFIG_ACCELGYRO_LSM6DSM	/* Base accel */
+#define CONFIG_ACCEL_KX022	 /* Lid accel */
+#define CONFIG_ACCELGYRO_LSM6DSM /* Base accel */
 
 /* Sensors without hardware FIFO are in forced mode */
 #define CONFIG_ACCEL_FORCE_MODE_MASK (1 << LID_ACCEL)
@@ -50,14 +50,12 @@
 
 #define CONFIG_LED_ONOFF_STATES_BAT_LOW 10
 
-#define CONFIG_ACCEL_LSM6DSM_INT_EVENT \
+#define CONFIG_ACCEL_LSM6DSM_INT_EVENT                                         \
 	TASK_EVENT_MOTION_SENSOR_INTERRUPT(BASE_ACCEL)
 
 /* Additional PPC second source */
 #define CONFIG_USBC_PPC_SYV682X
 #define CONFIG_USBC_PPC_DEDICATED_INT
-#undef CONFIG_SYV682X_HV_ILIM
-#define CONFIG_SYV682X_HV_ILIM SYV682X_HV_ILIM_5_50
 
 /* Additional TCPC second source in Port 1 */
 #define CONFIG_USB_PD_TCPM_MULTI_PS8XXX
@@ -69,10 +67,10 @@
 #include "registers.h"
 
 enum adc_channel {
-	ADC_TEMP_SENSOR_AMB,		/* ADC0 */
-	ADC_TEMP_SENSOR_CHARGER,	/* ADC1 */
-	ADC_VBUS_C0,			/* ADC9 */
-	ADC_VBUS_C1,			/* ADC4 */
+	ADC_TEMP_SENSOR_AMB,	 /* ADC0 */
+	ADC_TEMP_SENSOR_CHARGER, /* ADC1 */
+	ADC_VBUS_C0,		 /* ADC9 */
+	ADC_VBUS_C1,		 /* ADC4 */
 	ADC_CH_COUNT
 };
 
@@ -83,18 +81,10 @@ enum temp_sensor_id {
 	TEMP_SENSOR_COUNT
 };
 
-enum pwm_channel {
-	PWM_CH_KBLIGHT,
-	PWM_CH_COUNT
-};
+enum pwm_channel { PWM_CH_KBLIGHT, PWM_CH_COUNT };
 
 /* Motion sensors */
-enum sensor_id {
-	LID_ACCEL,
-	BASE_ACCEL,
-	BASE_GYRO,
-	SENSOR_COUNT
-};
+enum sensor_id { LID_ACCEL, BASE_ACCEL, BASE_GYRO, SENSOR_COUNT };
 
 enum battery_type {
 	BATTERY_DANAPACK_COS,
