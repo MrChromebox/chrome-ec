@@ -8,6 +8,8 @@
 #include "system.h"
 #include "task.h"
 
+#include <stddef.h>
+
 /* Recursive mutex implementation */
 
 /* Make sure atomic_t type is enough to keep waiters bitmask. */
