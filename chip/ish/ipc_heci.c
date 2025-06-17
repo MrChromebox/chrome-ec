@@ -145,8 +145,8 @@ struct ipc_if_ctx {
 	uint8_t irq_clr;
 	uint16_t reset_id;
 	struct ipc_msg_event msg_events[IPC_PROTOCOL_COUNT];
-	struct mutex lock;
-	struct mutex write_lock;
+	mutex_t lock;
+	mutex_t write_lock;
 
 	struct queue tx_queue;
 	uint8_t is_tx_ipc_busy;

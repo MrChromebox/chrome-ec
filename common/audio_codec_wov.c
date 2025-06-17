@@ -29,7 +29,7 @@ static uint32_t lang_len;
  * The variables below are shared between host command and WoV task.  This lock
  * is designed to protect them.
  */
-static struct mutex lock;
+static mutex_t lock;
 
 /*
  * wov_enabled is shared.

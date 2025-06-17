@@ -54,7 +54,7 @@
 #define CPRINTF(format, args...) cprintf(CC_USBCHARGE, format, ##args)
 
 /* Sensors */
-static struct mutex g_accel_mutex;
+static mutex_t g_accel_mutex;
 static struct accelgyro_saved_data_t g_bma253_data;
 
 /* TCS3400 private data */

@@ -199,10 +199,10 @@ void task_clear_pending_irq(int irq)
 void interrupt_disable(void)
 {
 }
-void mutex_lock(mutex_t *mtx)
+void mutex_lock(struct mutex_nr *mtx)
 {
 }
-void mutex_unlock(mutex_t *mtx)
+void mutex_unlock(struct mutex_nr *mtx)
 {
 }
 

@@ -208,8 +208,8 @@ board_vivaldi_keybd_config(void)
 const int usb_port_enable[USB_PORT_COUNT] = { GPIO_EN_USB_A0_VBUS };
 
 /* Sensors */
-static struct mutex g_lid_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_base_mutex;
 
 /* Matrices to rotate accelerometers into the standard reference. */
 static const mat33_fp_t base_lsm6dsm_ref = { { 0, FLOAT_TO_FP(1), 0 },

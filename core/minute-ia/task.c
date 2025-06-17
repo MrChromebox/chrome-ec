@@ -450,7 +450,7 @@ void task_trigger_irq(int irq)
 	__asm__ __volatile__("int %0\n" : : "i"(SOFTIRQ_VECTOR), "c"(irq));
 }
 
-void mutex_lock(struct mutex *mtx)
+void mutex_lock(struct mutex_nr *mtx)
 {
 	uint32_t old_val = 0, value = 1;
 	uint32_t id = 1 << task_get_current();
@@ -474,7 +474,7 @@ void mutex_lock(struct mutex *mtx)
 	atomic_clear_bits(&mtx->waiters, id);
 }
 
-void mutex_unlock(struct mutex *mtx)
+void mutex_unlock(struct mutex_nr *mtx)
 {
 	uint32_t waiters = 0;
 	uint32_t old_val = 1, val = 0;

@@ -168,7 +168,7 @@ const unsigned int i2c_ports_used = ARRAY_SIZE(i2c_ports);
  */
 
 /* Lid Sensor mutex */
-static struct mutex g_lid_mutex;
+static mutex_t g_lid_mutex;
 
 /* Sensor driver data */
 static struct bmi_drv_data_t g_bmi160_data;

@@ -49,8 +49,8 @@ int I2C_PORT_BATTERY = I2C_PORT_BATTERY_V1;
 #include "gpio_list.h"
 
 /* Motion sensors */
-static struct mutex g_lid_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_base_mutex;
 
 /* sensor private data */
 static struct kionix_accel_data g_kx022_data;

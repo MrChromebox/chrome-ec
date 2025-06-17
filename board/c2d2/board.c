@@ -40,7 +40,7 @@ DECLARE_DEFERRED(update_vrefs_and_shifters);
 static bool is_ec_i2c_enabled(void);
 
 /* Global state tracking current pin configuration and operations */
-static struct mutex vref_bus_state_mutex;
+static mutex_t vref_bus_state_mutex;
 static int vref_monitor_disable;
 #define VREF_MON_DIS_H1_RST_HELD BIT(0)
 #define VREF_MON_DIS_EC_PWR_HELD BIT(1)

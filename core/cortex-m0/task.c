@@ -508,7 +508,7 @@ static void __nvic_init_irqs(void)
 	}
 }
 
-void mutex_lock(struct mutex *mtx)
+void mutex_lock(struct mutex_nr *mtx)
 {
 	uint32_t id = 1 << task_get_current();
 
@@ -530,7 +530,7 @@ void mutex_lock(struct mutex *mtx)
 	atomic_clear_bits(&mtx->waiters, id);
 }
 
-void mutex_unlock(struct mutex *mtx)
+void mutex_unlock(struct mutex_nr *mtx)
 {
 	uint32_t waiters;
 	task_ *tsk = current_task;

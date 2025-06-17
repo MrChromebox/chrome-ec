@@ -27,8 +27,8 @@
 #define CPRINTS(format, args...) cprints(CC_MOTION_SENSE, format, ##args)
 /******************************************************************************/
 /* Sensors */
-static struct mutex g_lid_accel_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_accel_mutex;
+static mutex_t g_base_mutex;
 
 /* BMA253 private data */
 static struct accelgyro_saved_data_t g_bma253_data;

@@ -630,7 +630,7 @@ static void ivic_init_irqs(void)
 	set_int_priority(all_priorities);
 }
 
-void __ram_code mutex_lock(struct mutex *mtx)
+void __ram_code mutex_lock(struct mutex_nr *mtx)
 {
 	uint32_t id = 1 << task_get_current();
 
@@ -657,7 +657,7 @@ void __ram_code mutex_lock(struct mutex *mtx)
 	}
 }
 
-void __ram_code mutex_unlock(struct mutex *mtx)
+void __ram_code mutex_unlock(struct mutex_nr *mtx)
 {
 	uint32_t waiters;
 	task_ *tsk = current_task;

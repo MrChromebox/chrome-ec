@@ -17,7 +17,7 @@
 #include "timer.h"
 #include "util.h"
 
-struct mutex adc_lock;
+mutex_t adc_lock;
 
 struct adc_profile_t {
 	/* Register values. */

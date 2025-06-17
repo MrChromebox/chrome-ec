@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 
-static struct mutex shmem_lock;
+static mutex_t shmem_lock;
 
 #ifndef TEST_SHMALLOC
 #define set_map_bit(x)

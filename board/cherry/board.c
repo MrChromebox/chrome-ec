@@ -27,8 +27,8 @@
 #define CPRINTF(format, args...) cprintf(CC_USBCHARGE, format, ##args)
 
 /* Sensor */
-static struct mutex g_base_mutex;
-static struct mutex g_lid_mutex;
+static mutex_t g_base_mutex;
+static mutex_t g_lid_mutex;
 
 static struct icm_drv_data_t g_icm42607_data;
 static struct kionix_accel_data g_kx022_data;

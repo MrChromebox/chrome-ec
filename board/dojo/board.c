@@ -135,8 +135,8 @@ const struct temp_chg_struct temp_chg_table[] = {
 BUILD_ASSERT(ARRAY_SIZE(temp_chg_table) == CHG_LEVEL_COUNT);
 
 /* Sensor */
-static struct mutex g_base_mutex;
-static struct mutex g_lid_mutex;
+static mutex_t g_base_mutex;
+static mutex_t g_lid_mutex;
 
 static struct icm_drv_data_t g_icm426xx_data;
 static struct icm_drv_data_t g_icm42607_data;

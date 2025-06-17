@@ -840,10 +840,10 @@ void sensor_board_proc_double_tap(void)
 }
 
 /* Base Sensor mutex */
-static struct mutex g_base_mutex;
+static mutex_t g_base_mutex;
 
 /* Lid Sensor mutex */
-static struct mutex g_lid_mutex;
+static mutex_t g_lid_mutex;
 
 static struct kionix_accel_data g_kxcj9_data;
 static struct bmi_drv_data_t g_bmi160_data;

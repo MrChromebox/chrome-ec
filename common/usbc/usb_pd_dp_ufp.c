@@ -57,7 +57,7 @@ struct hpd_info {
 };
 
 static struct hpd_info hpd;
-static struct mutex hpd_mutex;
+static mutex_t hpd_mutex;
 
 static int alt_dp_mode_opos[CONFIG_USB_PD_PORT_MAX_COUNT];
 

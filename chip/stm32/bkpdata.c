@@ -23,7 +23,7 @@ uint16_t bkpdata_read(enum bkpdata_index index)
 
 int bkpdata_write(enum bkpdata_index index, uint16_t value)
 {
-	static struct mutex bkpdata_write_mutex;
+	static mutex_t bkpdata_write_mutex;
 	int use_mutex = !in_interrupt_context();
 
 	if (index < 0 || index >= STM32_BKP_ENTRIES)

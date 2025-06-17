@@ -43,7 +43,7 @@ BUILD_ASSERT(CONFIG_SPI_NOR_MAX_WRITE_SIZE + 5 <=
  * device mutable board defined device states, if the contention is too high it
  * may be worthwhile to change the global mutex granularity to a finer-grained
  * mutex granularity. */
-static struct mutex driver_mutex;
+static mutex_t driver_mutex;
 
 /* Single internal buffer used to stage serial NOR flash commands for the
  * public APIs (read, write, erase). */

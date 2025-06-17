@@ -39,7 +39,7 @@ struct key_event {
 };
 
 static struct queue const key_queue = QUEUE_NULL(16, struct key_event);
-static struct mutex key_queue_mutex;
+static mutex_t key_queue_mutex;
 
 enum hid_protocol {
 	HID_BOOT_PROTOCOL = 0,

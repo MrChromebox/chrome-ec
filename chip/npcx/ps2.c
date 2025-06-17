@@ -69,7 +69,7 @@ static struct ps2_data ps2_ch_data[NPCX_PS2_CH_COUNT] = {
  * (i.e. the bit position of CLK3-0 in the PS2_PSOSIG register)
  */
 static uint32_t channel_enabled_mask;
-static struct mutex ps2_lock;
+static mutex_t ps2_lock;
 static volatile task_id_t task_waiting = TASK_ID_INVALID;
 
 static void ps2_init(void)

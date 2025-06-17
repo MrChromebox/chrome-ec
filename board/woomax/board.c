@@ -49,8 +49,8 @@
 #define CPRINTFUSB(format, args...) cprintf(CC_USBCHARGE, format, ##args)
 
 /* Motion sensors */
-static struct mutex g_lid_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_base_mutex;
 
 /* sensor private data */
 static struct kionix_accel_data g_kx022_data;

@@ -322,7 +322,7 @@ void sensor_board_proc_double_tap(void)
 /* Motion sensors */
 /* Mutexes */
 #ifndef VARIANT_KUKUI_NO_SENSORS
-static struct mutex g_lid_mutex;
+static mutex_t g_lid_mutex;
 
 static struct icm_drv_data_t g_icm426xx_data;
 

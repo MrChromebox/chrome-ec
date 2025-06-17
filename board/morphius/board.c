@@ -57,8 +57,8 @@ static bool support_aoz_ppc;
 static bool ignore_c1_dp;
 
 /* Motion sensors */
-static struct mutex g_lid_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_base_mutex;
 
 mat33_fp_t base_standard_ref = { { 0, FLOAT_TO_FP(1), 0 },
 				 { FLOAT_TO_FP(1), 0, 0 },

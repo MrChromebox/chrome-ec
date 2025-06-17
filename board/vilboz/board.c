@@ -48,8 +48,8 @@ void hdmi_hpd_interrupt(enum gpio_signal signal)
 #include "gpio_list.h"
 
 /* Motion sensors */
-static struct mutex g_lid_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_base_mutex;
 
 /* sensor private data */
 static struct stprivate_data g_lis2dwl_data;

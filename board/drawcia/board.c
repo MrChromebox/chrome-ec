@@ -305,8 +305,8 @@ const struct i2c_port_t i2c_bitbang_ports[] = {
 const unsigned int i2c_bitbang_ports_used = ARRAY_SIZE(i2c_bitbang_ports);
 
 /* Sensor Mutexes */
-static struct mutex g_lid_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_base_mutex;
 
 /* Sensor Data */
 static struct accelgyro_saved_data_t g_bma253_data;

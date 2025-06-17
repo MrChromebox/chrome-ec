@@ -164,8 +164,8 @@ const struct max14637_config_t max14637_config[CONFIG_USB_PD_PORT_MAX_COUNT] = {
 /******************************************************************************/
 /* Sensors */
 /* Base Sensor mutex */
-static struct mutex g_base_mutex;
-static struct mutex g_lid_mutex;
+static mutex_t g_base_mutex;
+static mutex_t g_lid_mutex;
 
 /* Base accel private data */
 static struct bmi_drv_data_t g_bmi160_data;

@@ -26,7 +26,7 @@
 #define CONFIG_ADC_SAMPLE_TIME 2
 #endif
 
-struct mutex adc_lock;
+mutex_t adc_lock;
 
 static int watchdog_ain_id;
 

@@ -14,8 +14,8 @@
 #include "temp_sensor.h"
 #include "thermal.h"
 
-static struct mutex g_base_mutex;
-static struct mutex g_lid_mutex;
+static mutex_t g_base_mutex;
+static mutex_t g_lid_mutex;
 
 static struct bmi_drv_data_t g_bmi160_data;
 static struct accelgyro_saved_data_t g_bma253_data;

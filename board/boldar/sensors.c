@@ -21,8 +21,8 @@
 
 /******************************************************************************/
 /* Sensors */
-static struct mutex g_lid_accel_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_accel_mutex;
+static mutex_t g_base_mutex;
 
 /* Lid accel private data */
 static struct stprivate_data g_lis2dh_data;

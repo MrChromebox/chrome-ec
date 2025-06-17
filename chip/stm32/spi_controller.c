@@ -58,7 +58,7 @@ static struct dma_req_t dma_req[ARRAY_SIZE(SPI_REGS)] = {
 };
 #endif
 
-static struct mutex spi_mutex[ARRAY_SIZE(SPI_REGS)];
+static mutex_t spi_mutex[ARRAY_SIZE(SPI_REGS)];
 
 #define SPI_TRANSACTION_TIMEOUT_USEC (800 * MSEC)
 

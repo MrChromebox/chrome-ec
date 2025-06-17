@@ -410,12 +410,13 @@ typedef struct k_mutex mutex_t;
 #define mutex_lock(mtx) (k_mutex_lock(mtx, K_FOREVER))
 #define mutex_unlock(mtx) (k_mutex_unlock(mtx))
 #else
-struct mutex {
+/* Non-recursive mutex struct */
+struct mutex_nr {
 	uint32_t lock;
 	atomic_t waiters;
 };
 
-typedef struct mutex mutex_t;
+typedef struct mutex_nr mutex_t;
 
 /**
  * K_MUTEX_DEFINE is a macro normally provided by the Zephyr kernel,

@@ -80,7 +80,7 @@ const struct pwm_t pwm_channels[] = {
 BUILD_ASSERT(ARRAY_SIZE(pwm_channels) == PWM_CH_COUNT);
 
 /* Motion sensors */
-static struct mutex icm426xx_mutex;
+static mutex_t icm426xx_mutex;
 
 static struct icm_drv_data_t g_icm426xx_data;
 

@@ -129,7 +129,7 @@
  * power is connected or when the EN_LWPWR bit in ChargeOption0 is clear.
  */
 static uint32_t bq25710_perf_mode_req;
-static struct mutex bq25710_perf_mode_mutex;
+static mutex_t bq25710_perf_mode_mutex;
 #endif
 
 /*

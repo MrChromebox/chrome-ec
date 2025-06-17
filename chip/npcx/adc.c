@@ -56,7 +56,7 @@ enum npcx_adc_conversion_mode {
 /* Global variables */
 static volatile task_id_t task_waiting;
 
-struct mutex adc_lock;
+mutex_t adc_lock;
 
 static volatile bool adc_done;
 

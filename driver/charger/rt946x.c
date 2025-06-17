@@ -86,7 +86,7 @@ enum rt946x_chg_stat {
 	RT946X_CHGSTAT_FAULT,
 };
 
-static struct mutex adc_access_lock;
+static mutex_t adc_access_lock;
 
 #ifdef CONFIG_CHARGER_MT6370
 /*
@@ -126,7 +126,7 @@ static const int mt6370_adc_offset[MT6370_ADC_MAX] = {
 };
 
 static int hidden_mode_cnt = 0;
-static struct mutex hidden_mode_lock;
+static mutex_t hidden_mode_lock;
 static const unsigned char mt6370_reg_en_hidden_mode[] = {
 	MT6370_REG_HIDDENPASCODE1,
 	MT6370_REG_HIDDENPASCODE2,

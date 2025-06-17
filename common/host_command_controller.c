@@ -22,7 +22,7 @@
 /* Number of attempts for each PD host command */
 #define PD_HOST_COMMAND_ATTEMPTS 3
 
-static struct mutex pd_mutex;
+static mutex_t pd_mutex;
 
 /**
  * Non-task-safe internal version of pd_host_command().

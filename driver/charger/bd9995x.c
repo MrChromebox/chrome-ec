@@ -98,12 +98,12 @@ static const struct charger_info bd9995x_charger_info = {
 static enum bd9995x_command charger_map_cmd = BD9995X_INVALID_COMMAND;
 
 /* Mutex for active register set control. */
-static struct mutex bd9995x_map_mutex;
+static mutex_t bd9995x_map_mutex;
 
 /* Tracks the state of VSYS_PRIORITY */
 static int vsys_priority;
 /* Mutex for VIN_CTRL_SET register */
-static struct mutex bd9995x_vin_mutex;
+static mutex_t bd9995x_vin_mutex;
 
 #ifdef HAS_TASK_USB_CHG
 /* USB switch */
@@ -371,7 +371,7 @@ static int bd9995x_get_charger_op_status(int chgnum, int *status)
 #ifdef HAS_TASK_USB_CHG
 static int bc12_detected_type[CONFIG_USB_PD_PORT_MAX_COUNT];
 /* Mutex for UCD_SET registers, lock before read / mask / write. */
-static struct mutex ucd_set_mutex[BD9995X_CHARGE_PORT_COUNT];
+static mutex_t ucd_set_mutex[BD9995X_CHARGE_PORT_COUNT];
 
 static int bd9995x_get_bc12_device_type(int chgnum, int port)
 {

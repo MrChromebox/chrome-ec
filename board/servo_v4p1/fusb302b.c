@@ -17,7 +17,7 @@ static int port;
 static int status0;
 static int status1;
 static int interrupt;
-static struct mutex measure_lock;
+static mutex_t measure_lock;
 
 static int tcpc_write(int reg, int val)
 {

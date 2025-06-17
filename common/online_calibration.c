@@ -28,7 +28,7 @@ static uint32_t sensor_calib_cache_valid_map;
 /** Bitmap telling which online calibration values are dirty. */
 static uint32_t sensor_calib_cache_dirty_map;
 
-struct mutex g_calib_cache_mutex;
+mutex_t g_calib_cache_mutex;
 
 static int get_temperature(struct motion_sensor_t *sensor, int *temp)
 {

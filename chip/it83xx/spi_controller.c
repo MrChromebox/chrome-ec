@@ -111,7 +111,7 @@ int spi_transaction(const struct spi_device_t *spi_device,
 {
 	int idx;
 	uint8_t port = spi_device->port;
-	static struct mutex spi_mutex;
+	static mutex_t spi_mutex;
 
 	mutex_lock(&spi_mutex);
 	/* bit[0]: Write cycle */

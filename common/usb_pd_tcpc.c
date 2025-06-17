@@ -38,7 +38,7 @@
  */
 static int debug_level;
 
-static struct mutex pd_crc_lock;
+static mutex_t pd_crc_lock;
 #else
 #define CPRINTF(format, args...)
 static const int debug_level;

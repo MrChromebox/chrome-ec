@@ -20,7 +20,7 @@
  */
 #define ADC_SINGLE_READ_TIME 15000
 
-struct mutex adc_lock;
+mutex_t adc_lock;
 
 /*
  * Volatile should not be needed.

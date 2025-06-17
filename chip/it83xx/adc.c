@@ -20,7 +20,7 @@
 #define CPRINTS(format, args...) cprints(CC_SYSTEM, format, ##args)
 
 /* Global variables */
-static struct mutex adc_lock;
+static mutex_t adc_lock;
 static int adc_init_done;
 static volatile task_id_t task_waiting;
 

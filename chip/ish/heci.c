@@ -61,8 +61,8 @@ struct heci_client_connect {
 	size_t rx_msg_length;
 
 	uint32_t flow_ctrl_creds; /* flow control */
-	struct mutex lock; /* protects against 2 writers */
-	struct mutex cred_lock; /* protects flow ctrl */
+	mutex_t lock; /* protects against 2 writers */
+	mutex_t cred_lock; /* protects flow ctrl */
 	int waiting_task;
 };
 

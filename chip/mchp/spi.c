@@ -64,7 +64,7 @@ static const struct dma_option spi_tx_option[] = {
 
 /* only regular image needs mutex, LFW does not have scheduling */
 #ifndef LFW
-static struct mutex spi_mutex[ARRAY_SIZE(spi_rx_option)];
+static mutex_t spi_mutex[ARRAY_SIZE(spi_rx_option)];
 
 /*
  * Acquire mutex for specified SPI controller/port.

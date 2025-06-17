@@ -233,8 +233,8 @@ const struct pi3usb9201_config_t pi3usb9201_bc12_chips[] = {
 };
 
 /* Mutexes */
-static struct mutex g_base_mutex;
-static struct mutex g_lid_mutex;
+static mutex_t g_base_mutex;
+static mutex_t g_lid_mutex;
 
 static struct kionix_accel_data g_kx022_data;
 static struct bmi_drv_data_t g_bmi160_data;

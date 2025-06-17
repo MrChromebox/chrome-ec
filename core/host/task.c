@@ -261,7 +261,7 @@ uint32_t task_wait_event_mask(uint32_t event_mask, int timeout_us)
 	return events & event_mask;
 }
 
-void mutex_lock(struct mutex *mtx)
+void mutex_lock(struct mutex_nr *mtx)
 {
 	int value = 0;
 	int id = 1 << task_get_current();
@@ -281,7 +281,7 @@ void mutex_lock(struct mutex *mtx)
 	mtx->waiters &= ~id;
 }
 
-void mutex_unlock(struct mutex *mtx)
+void mutex_unlock(struct mutex_nr *mtx)
 {
 	int v;
 	mtx->lock = 0;

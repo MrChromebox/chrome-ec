@@ -16,7 +16,7 @@
 
 #define ADC_SINGLE_READ_TIMEOUT 3000 /* 3 ms */
 
-struct mutex adc_lock;
+mutex_t adc_lock;
 
 static int restore_clock;
 

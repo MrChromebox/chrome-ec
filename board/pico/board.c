@@ -53,8 +53,8 @@
 #ifndef VARIANT_KUKUI_NO_SENSORS
 /* Motion sensors */
 /* Mutexes */
-static struct mutex g_lid_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_base_mutex;
 
 /* Rotation matrixes */
 static const mat33_fp_t lid_standard_ref = { { FLOAT_TO_FP(1), 0, 0 },

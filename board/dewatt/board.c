@@ -41,8 +41,8 @@
 #include "gpio_list.h"
 
 /* Motion sensor mutex */
-static struct mutex g_lid_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_base_mutex;
 
 /* Motion sensor private data */
 static struct bmi_drv_data_t g_bmi_data;

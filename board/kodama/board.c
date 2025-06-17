@@ -317,7 +317,7 @@ DECLARE_HOOK(HOOK_INIT, board_i2c_init, HOOK_PRIO_INIT_I2C);
 /* Motion sensors */
 /* Mutexes */
 #ifdef SECTION_IS_RW
-static struct mutex g_lid_mutex;
+static mutex_t g_lid_mutex;
 
 static struct lsm6dsm_data lsm6dsm_data = LSM6DSM_DATA;
 

@@ -43,8 +43,8 @@
 #define HOSTCMD_TYPE_HOSTEVENT 2
 
 static volatile int16_t ipc0_enabled_count;
-static struct mutex ipc0_lock;
-static struct mutex ipi_lock;
+static mutex_t ipc0_lock;
+static mutex_t ipi_lock;
 /* IPC0 shared objects, including send object and receive object. */
 static struct ipc_shared_obj *const scp_send_obj =
 	(struct ipc_shared_obj *)CONFIG_IPC_SHARED_OBJ_ADDR;

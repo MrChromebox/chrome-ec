@@ -136,7 +136,7 @@ const struct tcpc_config_t tcpc_config[CONFIG_USB_PD_PORT_MAX_COUNT] = {
 	},
 };
 
-struct mutex pericom_mux_lock;
+mutex_t pericom_mux_lock;
 struct pi3usb9281_config pi3usb9281_chips[] = {
 	{
 		.i2c_port = I2C_PORT_PERICOM,
@@ -226,7 +226,7 @@ const struct usb_mux_chain usb_muxes[CONFIG_USB_PD_PORT_MAX_COUNT] = {
  * Store the current DP hardware route.
  */
 static int dp_hw_port = PD_PORT_NONE;
-static struct mutex dp_hw_lock;
+static mutex_t dp_hw_lock;
 
 /**
  * Reset PD MCU
@@ -643,10 +643,10 @@ DECLARE_HOOK(HOOK_CHIPSET_SUSPEND, board_chipset_suspend, HOOK_PRIO_DEFAULT);
 /* Motion sensors */
 /* Mutexes */
 #ifdef CONFIG_ACCEL_KX022
-static struct mutex g_lid_mutex;
+static mutex_t g_lid_mutex;
 #endif
 #ifdef CONFIG_ACCELGYRO_BMI160
-static struct mutex g_base_mutex;
+static mutex_t g_base_mutex;
 
 /* Matrix to rotate accelrator into standard reference frame */
 const mat33_fp_t base_standard_ref = { { FLOAT_TO_FP(-1), 0, 0 },

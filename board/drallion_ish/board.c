@@ -34,9 +34,9 @@ const struct i2c_port_t i2c_ports[] = {
 const unsigned int i2c_ports_used = ARRAY_SIZE(i2c_ports);
 
 /* Sensor config */
-static struct mutex g_lid_mutex;
-static struct mutex g_lid_mag_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_lid_mag_mutex;
+static mutex_t g_base_mutex;
 
 /* sensor private data */
 static struct lsm6dsm_data lsm6dsm_a_data = LSM6DSM_DATA;

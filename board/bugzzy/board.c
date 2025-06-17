@@ -403,8 +403,8 @@ __override void typec_set_source_current_limit(int port, enum tcpc_rp_value rp)
 }
 
 /* Sensors */
-static struct mutex g_lid_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_base_mutex;
 
 static struct lsm6dsm_data lsm6dsm_data = LSM6DSM_DATA;
 

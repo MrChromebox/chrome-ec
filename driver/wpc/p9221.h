@@ -274,7 +274,7 @@ struct wpc_charger_info {
 	/* supplier type of wireless charger */
 	uint8_t charge_supplier;
 	/* lock of send command to p9221 */
-	struct mutex cmd_lock;
+	mutex_t cmd_lock;
 };
 
 /* Interrupt handler for p9221 */

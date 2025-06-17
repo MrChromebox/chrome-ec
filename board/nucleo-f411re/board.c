@@ -61,7 +61,7 @@ const struct i2c_port_t i2c_ports[] = {
 const unsigned int i2c_ports_used = ARRAY_SIZE(i2c_ports);
 
 /* Base Sensor mutex */
-static struct mutex g_base_mutex;
+static mutex_t g_base_mutex;
 
 static struct bmi_drv_data_t g_bmi160_data;
 

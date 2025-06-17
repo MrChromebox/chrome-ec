@@ -831,12 +831,12 @@ DECLARE_HOOK(HOOK_SECOND, board_one_sec, HOOK_PRIO_DEFAULT);
 
 /* Motion sensors */
 
-static struct mutex g_base_mutex;
+static mutex_t g_base_mutex;
 /* BMI160 private data */
 static struct bmi_drv_data_t g_bmi160_data;
 
 #ifdef CONFIG_ACCEL_KX022
-static struct mutex g_lid_mutex;
+static mutex_t g_lid_mutex;
 /* KX022 private data */
 static struct kionix_accel_data g_kx022_data;
 #endif

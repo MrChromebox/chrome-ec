@@ -567,8 +567,8 @@ uint16_t tcpc_get_alert_status(void)
 }
 
 /* Mutexes */
-static struct mutex g_base_mutex;
-static struct mutex g_lid_mutex;
+static mutex_t g_base_mutex;
+static mutex_t g_lid_mutex;
 
 /* Matrix to rotate accelerometer into standard reference frame */
 const mat33_fp_t base_standard_ref = { { FLOAT_TO_FP(-1), 0, 0 },

@@ -278,8 +278,8 @@ const struct usb_mux_chain usb_muxes[CONFIG_USB_PD_PORT_MAX_COUNT] = {
 };
 
 /* Sensor Mutexes */
-static struct mutex g_lid_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_base_mutex;
 
 /* Sensor Data */
 static struct accelgyro_saved_data_t g_bma253_data;

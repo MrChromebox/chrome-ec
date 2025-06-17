@@ -114,7 +114,7 @@ static const int cps8100_wake_up_delay_ms = 10;
 
 /* TODO: This should belong to PCHG context. Driver should be state-less. */
 struct cps8100_state {
-	struct mutex mtx;
+	mutex_t mtx;
 	uint32_t reg;
 };
 

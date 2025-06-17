@@ -31,7 +31,7 @@ static const int touchpad_debug;
 
 static struct queue const report_queue =
 	QUEUE_NULL(8, struct usb_hid_touchpad_report);
-static struct mutex report_queue_mutex;
+static mutex_t report_queue_mutex;
 
 #define HID_TOUCHPAD_REPORT_SIZE sizeof(struct usb_hid_touchpad_report)
 

@@ -67,8 +67,8 @@ const struct i2c_port_t i2c_ports[] = {
 const unsigned int i2c_ports_used = ARRAY_SIZE(i2c_ports);
 
 /* Motion sensors */
-static struct mutex g_lid_mutex_1;
-static struct mutex g_base_mutex_1;
+static mutex_t g_lid_mutex_1;
+static mutex_t g_base_mutex_1;
 
 /* Lid accel private data */
 static struct stprivate_data g_lis2dwl_data;

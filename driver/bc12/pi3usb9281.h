@@ -58,6 +58,9 @@
 /* Check if charge status has any connection */
 #define PI3USB9281_CHG_STATUS_ANY(x) (((x) & 0x1f) > 1)
 
+/* Include task.h for mutex_t */
+#include "task.h"
+
 /* Define configuration of one pi3usb9281 part */
 struct pi3usb9281_config {
 	/* i2c port that chip resides on */
@@ -67,7 +70,7 @@ struct pi3usb9281_config {
 	/* Logic level of mux_gpio to select chip */
 	int mux_gpio_level;
 	/* Mutex to lock access to mux gpio or NULL if no mux exists */
-	struct mutex *mux_lock;
+	mutex_t *mux_lock;
 };
 
 /* Configuration struct defined at board level */

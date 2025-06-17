@@ -115,8 +115,8 @@ BUILD_ASSERT(ARRAY_SIZE(temp_sensors) == TEMP_SENSOR_COUNT);
 
 /* Motion sensors */
 /* Mutexes */
-static struct mutex g_lid_mutex;
-static struct mutex g_base_mutex;
+static mutex_t g_lid_mutex;
+static mutex_t g_base_mutex;
 
 /* Matrix to rotate lid and base sensor into standard reference frame */
 const mat33_fp_t standard_rot_ref = { { FLOAT_TO_FP(-1), 0, 0 },

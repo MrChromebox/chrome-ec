@@ -13,7 +13,7 @@
 #include "timer.h"
 #include "util.h"
 
-static struct mutex mtx;
+static mutex_t mtx;
 
 /* period between 50us and 3.2ms */
 #define PERIOD_US(num) (((num % 64) + 1) * 50)

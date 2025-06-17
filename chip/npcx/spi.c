@@ -25,7 +25,7 @@
 #define CPRINTS(format, args...) cprints(CC_SPI, format, ##args)
 #endif
 
-static struct mutex spi_lock;
+static mutex_t spi_lock;
 
 /**
  * Clear SPI data buffer.

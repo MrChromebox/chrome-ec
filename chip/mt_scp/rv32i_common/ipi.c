@@ -23,7 +23,7 @@
 
 static uint8_t init_done;
 
-static struct mutex ipi_lock;
+static mutex_t ipi_lock;
 static struct ipc_shared_obj *const ipi_send_buf =
 	(struct ipc_shared_obj *)CONFIG_IPC_SHARED_OBJ_ADDR;
 static struct ipc_shared_obj *const ipi_recv_buf =
