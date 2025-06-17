@@ -65,4 +65,22 @@ static inline atomic_val_t atomic_clear(atomic_t *addr)
 	return __atomic_exchange_n(addr, 0, __ATOMIC_SEQ_CST);
 }
 
+static inline bool atomic_compare_exchange(atomic_t *addr,
+					   atomic_val_t *expected,
+					   atomic_val_t desired)
+{
+	return __atomic_compare_exchange_n(addr, expected, desired, false,
+					   __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+}
+
+static inline atomic_val_t atomic_exchange(atomic_t *addr, atomic_val_t value)
+{
+	return __atomic_exchange_n(addr, value, __ATOMIC_SEQ_CST);
+}
+
+static inline atomic_val_t atomic_load(atomic_t *addr)
+{
+	return __atomic_load_n(addr, __ATOMIC_SEQ_CST);
+}
+
 #endif /* __CROS_EC_ATOMIC_H */
