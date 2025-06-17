@@ -882,6 +882,8 @@ static void __nvic_init_irqs(void)
 	}
 }
 
+#ifndef CONFIG_COMMON_RECURSIVE_MUTEX
+
 void mutex_lock(struct mutex_nr *mtx)
 {
 	uint32_t id;
@@ -974,6 +976,8 @@ void mutex_unlock(struct mutex_nr *mtx)
 	/* Ensure no event is remaining from mutex wake-up */
 	atomic_clear_bits(&tsk->events, TASK_EVENT_MUTEX);
 }
+
+#endif /* !CONFIG_COMMON_RECURSIVE_MUTEX */
 
 void task_print_list(void)
 {

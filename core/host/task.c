@@ -261,6 +261,8 @@ uint32_t task_wait_event_mask(uint32_t event_mask, int timeout_us)
 	return events & event_mask;
 }
 
+#ifndef CONFIG_COMMON_RECURSIVE_MUTEX
+
 void mutex_lock(struct mutex_nr *mtx)
 {
 	int value = 0;
@@ -293,6 +295,8 @@ void mutex_unlock(struct mutex_nr *mtx)
 			break;
 		}
 }
+
+#endif /* !CONFIG_COMMON_RECURSIVE_MUTEX */
 
 task_id_t task_get_current(void)
 {

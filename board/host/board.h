@@ -106,4 +106,6 @@ void fps_event(enum gpio_signal signal);
 #define I2C_PORT_EEPROM 0
 #define I2C_ADDR_EEPROM_FLAGS 0x50
 
+#define CONFIG_COMMON_RECURSIVE_MUTEX
+
 #endif /* __CROS_EC_BOARD_H */

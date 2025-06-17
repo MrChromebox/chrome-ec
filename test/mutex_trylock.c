@@ -23,6 +23,8 @@ int mutex_second_task(void *unused)
 	TEST_EQ(mutex_try_lock(&mtx), 1, "%d");
 	ccprintf("done\n");
 	task_wake(TASK_ID_MTX1);
+	/* Wait 1s for MTX1 to run */
+	task_wait_event(SECOND);
 	ccprintf("MTX2: Unlocking...\n");
 	mutex_unlock(&mtx);
 
@@ -41,15 +43,19 @@ int mutex_main_task(void *unused)
 
 	/* --- Try lock/Unlock without contention --- */
 	ccprintf("No contention :\n");
-	TEST_EQ(mutex_try_lock(&mtx), 1, "%d");
-	TEST_EQ(mutex_try_lock(&mtx), 0, "%d");
-	mutex_unlock(&mtx);
-	TEST_EQ(mutex_try_lock(&mtx), 1, "%d");
-	TEST_EQ(mutex_try_lock(&mtx), 0, "%d");
-	mutex_unlock(&mtx);
-	TEST_EQ(mutex_try_lock(&mtx), 1, "%d");
-	TEST_EQ(mutex_try_lock(&mtx), 0, "%d");
-	mutex_unlock(&mtx);
+	for (int i = 0; i < 3; i++) {
+		TEST_EQ(mutex_try_lock(&mtx), 1, "%d");
+		if (IS_ENABLED(CONFIG_COMMON_RECURSIVE_MUTEX)) {
+			/* mutex_try_lock will succeed if COMMON_RECURSIVE_MUTEX
+			 * is enabled, and will need to be unlocked.
+			 */
+			TEST_EQ(mutex_try_lock(&mtx), 1, "%d");
+			mutex_unlock(&mtx);
+		} else {
+			TEST_EQ(mutex_try_lock(&mtx), 0, "%d");
+		}
+		mutex_unlock(&mtx);
+	}
 	ccprintf("done.\n");
 
 	/* --- Serialization to test simple contention --- */

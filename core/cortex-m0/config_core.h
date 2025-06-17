@@ -20,4 +20,7 @@
 
 #define CONFIG_ASSEMBLY_MULA32
 
+/* cortex-m0 is missing the needed atomic operations for recursive mutexes */
+#undef CONFIG_COMMON_RECURSIVE_MUTEX
+
 #endif /* __CROS_EC_CONFIG_CORE_H */

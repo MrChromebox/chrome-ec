@@ -59,6 +59,8 @@ int mutex_recursive_second_task(void *unused)
 
 	/* Ping main task */
 	task_wake(TASK_ID_MTX1);
+	/* Wait 1s for MTX1 to run */
+	task_wait_event(SECOND);
 
 	for (int i = 5; i > 0; i--) {
 		ccprintf("MTX2: Unlocking (%d)...\n", i);
@@ -71,6 +73,8 @@ int mutex_recursive_second_task(void *unused)
 		if (i > 1) {
 			ccprintf("MTX2: Ping MTX1 task\n");
 			task_wake(TASK_ID_MTX1);
+			/* Wait 1s for MTX1 to run */
+			task_wait_event(SECOND);
 		}
 	}
 

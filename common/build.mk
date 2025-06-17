@@ -79,6 +79,11 @@ common-$(CONFIG_IO_EXPANDER)+=ioexpander.o ioexpander_commands.o
 common-$(CONFIG_COMMON_PANIC_OUTPUT)+=panic_output.o
 common-$(CONFIG_COMMON_RUNTIME)+=hooks.o main.o system.o peripheral.o \
 	system_boot_time.o
+ifeq ($(BOARD),host)
+common-$(CONFIG_COMMON_RECURSIVE_MUTEX)+=recursive_mutex.o
+else ifeq ($(USE_BUILTIN_STDLIB), 1)
+common-$(CONFIG_COMMON_RECURSIVE_MUTEX)+=recursive_mutex.o
+endif
 common-$(CONFIG_COMMON_TIMER)+=timer.o
 common-$(CONFIG_CRC8)+= crc8.o
 common-$(CONFIG_CURVE25519)+=curve25519.o

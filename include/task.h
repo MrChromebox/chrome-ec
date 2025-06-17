@@ -409,7 +409,24 @@ typedef struct k_mutex mutex_t;
 
 #define mutex_lock(mtx) (k_mutex_lock(mtx, K_FOREVER))
 #define mutex_unlock(mtx) (k_mutex_unlock(mtx))
+
+#elif defined(CONFIG_COMMON_RECURSIVE_MUTEX)
+
+/* Use the common recursive implementation of mutex */
+
+#include "recursive_mutex.h"
+
+typedef struct mutex_r mutex_t;
+
+#define mutex_lock(mtx) (mutex_lock_recursive(mtx))
+#define mutex_try_lock(mtx) (mutex_try_lock_recursive(mtx))
+#define mutex_unlock(mtx) (mutex_unlock_recursive(mtx))
+#define k_mutex_init(mtx) (mutex_init_recursive(mtx))
+#define K_MUTEX_DEFINE(name) K_MUTEX_R_DEFINE(name)
+
 #else
+/* Use core specific non-recursive implementation of mutex */
+
 /* Non-recursive mutex struct */
 struct mutex_nr {
 	uint32_t lock;
