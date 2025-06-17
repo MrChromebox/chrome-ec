@@ -3,6 +3,9 @@
  * found in the LICENSE file.
  */
 
+#ifndef __LIBC_RECURSIVE_MUTEX_H
+#define __LIBC_RECURSIVE_MUTEX_H
+
 #include "atomic_t.h"
 #include "task.h"
 
@@ -70,3 +73,5 @@ int mutex_try_lock_recursive(struct mutex_r *mtx);
  * Must not be used in interrupt context!
  */
 void mutex_unlock_recursive(struct mutex_r *mtx);
+
+#endif /* __LIBC_RECURSIVE_MUTEX_H */
