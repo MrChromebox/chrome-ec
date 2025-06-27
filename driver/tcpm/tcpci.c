@@ -1298,7 +1298,14 @@ void tcpci_tcpc_alert(int port)
 		tcpc_write16(port, TCPC_REG_ALERT, alert);
 
 	if (alert & TCPC_REG_ALERT_CC_STATUS) {
-		if (IS_ENABLED(CONFIG_USB_PD_DUAL_ROLE_AUTO_TOGGLE)) {
+		/*
+		 * Always report PD_EVENT_CC event if
+		 * CONFIG_USB_PD_EVENT_DRIVEN_CC_STATE is enabled
+		 * so that the CC state change in unattached state
+		 * can be detected.
+		 */
+		if (IS_ENABLED(CONFIG_USB_PD_DUAL_ROLE_AUTO_TOGGLE) &&
+		    !IS_ENABLED(CONFIG_USB_PD_EVENT_DRIVEN_CC_STATE)) {
 			enum tcpc_cc_voltage_status cc1;
 			enum tcpc_cc_voltage_status cc2;
 

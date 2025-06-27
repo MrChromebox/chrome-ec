@@ -451,6 +451,13 @@ config PLATFORM_EC_USB_PD_INT_STORM_MAX
 	  Maximum rate of interrupts from PD stack (per second) that EC
 	  can support without causing a watchdog.
 
+config PLATFORM_EC_USB_PD_EVENT_DRIVEN_CC_STATE
+	bool "Interrupt event driven CC state change detection"
+	default n
+	help
+	  Enable interrupt event driven CC state change detection instead of
+	  polling CC state from TCPC
+
 rsource "Kconfig.svdm_rsp"
 
 endif  # PLATFORM_EC_USB_POWER_DELIVERY
