@@ -9,6 +9,7 @@
 #include "charge_manager.h"
 #include "charge_state.h"
 #include "common.h"
+#include "driver/charger/isl923x.h"
 #include "gpio.h"
 #include "hooks.h"
 #include "math_util.h"
@@ -389,10 +390,33 @@ void check_battery_life_time(void)
 	}
 }
 
+test_export_static int board_force_bgate_off(int enable)
+{
+	int rv, regval;
+
+	rv = i2c_read16(chg_chips[CHARGER_PRIMARY].i2c_port,
+			chg_chips[CHARGER_PRIMARY].i2c_addr_flags,
+			ISL923X_REG_CONTROL1, &regval);
+
+	if (!rv) {
+		if (enable)
+			regval |= RAA489000_C1_BGATE_FORCE_OFF;
+		else
+			regval &= ~RAA489000_C1_BGATE_FORCE_OFF;
+		rv = i2c_write16(chg_chips[CHARGER_PRIMARY].i2c_port,
+				 chg_chips[CHARGER_PRIMARY].i2c_addr_flags,
+				 ISL923X_REG_CONTROL1, regval);
+	}
+
+	return rv;
+}
+
 int charger_profile_override(struct charge_state_data *curr)
 {
 	int data_c;
 	int data_v;
+	int rv;
+	static int bgate_off_flag = 0;
 
 	enum charge_state state = ST_IDLE;
 
@@ -403,6 +427,12 @@ int charger_profile_override(struct charge_state_data *curr)
 		temp_zone = NORMAL_TEMP;
 		bat_drop_voltage = 0;
 		board_battery_type = BATTERY_TYPE_COUNT;
+
+		if (bgate_off_flag) {
+			rv = board_force_bgate_off(0);
+			if (!rv)
+				bgate_off_flag = 0;
+		}
 		return 0;
 	}
 
@@ -420,11 +450,22 @@ int charger_profile_override(struct charge_state_data *curr)
 
 	/* charge stop */
 	if (temp_zone == STOP_LOW_TEMP || temp_zone == STOP_HIGH_TEMP) {
+		if (bgate_off_flag == 0) {
+			rv = board_force_bgate_off(1);
+			if (!rv)
+				bgate_off_flag = 1;
+		}
 		curr->requested_current = curr->requested_voltage = 0;
 		curr->batt.flags &= ~BATT_FLAG_WANT_CHARGE;
 		curr->state = ST_IDLE;
 
 		return 0;
+	}
+
+	if (bgate_off_flag) {
+		rv = board_force_bgate_off(0);
+		if (!rv)
+			bgate_off_flag = 0;
 	}
 
 	state = curr->state;
