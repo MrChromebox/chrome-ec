@@ -133,16 +133,18 @@ ifneq "$(CONFIG_COMMON_RUNTIME)" "y"
 endif
 
 # Compute RW firmware size and offset
-_rw_off_str:=$(shell echo "CONFIG_RW_MEM_OFF" | $(CPP) $(CPPFLAGS) -P \
-		-Ichip/$(CHIP) -I$(BDIR) -imacros include/config.h)
-_rw_off:=$(shell echo "$$(($(_rw_off_str)))")
-_rw_size_str:=$(shell echo "CONFIG_RW_SIZE" | $(CPP) $(CPPFLAGS) -P \
-		-Ichip/$(CHIP) -I$(BDIR) -imacros include/config.h)
-_rw_size:=$(shell echo "$$(($(_rw_size_str)))")
 _program_memory_base_str:=$(shell echo "CONFIG_PROGRAM_MEMORY_BASE" | \
 		$(CPP) $(CPPFLAGS) -P \
 		-Ichip/$(CHIP) -I$(BDIR) -imacros include/config.h)
 _program_memory_base=$(shell echo "$$(($(_program_memory_base_str)))")
+_rw_off_str:=$(shell echo "IMAGE_RW_AT" | $(CPP) $(CPPFLAGS) -P \
+		-Ichip/$(CHIP) -I$(BDIR) -imacros include/config.h \
+		-imacros common/firmware_image.lds.S)
+_rw_off:=$(shell echo "$$(($(_rw_off_str)))")
+_rw_off:=$(shell echo $$(($(_rw_off) - $(_program_memory_base))))
+_rw_size_str:=$(shell echo "CONFIG_RW_SIZE" | $(CPP) $(CPPFLAGS) -P \
+		-Ichip/$(CHIP) -I$(BDIR) -imacros include/config.h)
+_rw_size:=$(shell echo "$$(($(_rw_size_str)))")
 
 $(eval BOARD_$(UC_BOARD)=y)
 $(eval CHIP_$(UC_CHIP)=y)
