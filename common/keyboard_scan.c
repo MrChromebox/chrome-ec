@@ -81,14 +81,6 @@ __overridable struct keyboard_scan_config keyscan_config = {
 	},
 };
 
-/* Boot key list.  Must be in same order as enum boot_key. */
-#ifndef CONFIG_KEYBOARD_MULTIPLE
-struct boot_key_entry {
-	uint8_t mask_index;
-	uint8_t mask_value;
-};
-#endif
-
 #ifdef CONFIG_KEYBOARD_BOOT_KEYS
 #ifndef CONFIG_KEYBOARD_MULTIPLE
 static const struct boot_key_entry boot_key_list[] = {
@@ -709,21 +701,12 @@ static uint32_t check_key_list(const uint8_t *state)
 	/* Update mask with all boot keys that were pressed. */
 	k = boot_key_list;
 
-#ifndef CONFIG_KEYBOARD_MULTIPLE
-	for (c = 0; c < ARRAY_SIZE(boot_key_list); c++, k++) {
-		if (curr_state[k->mask_index] & k->mask_value) {
-			boot_key_mask |= BIT(c);
-			curr_state[k->mask_index] &= ~k->mask_value;
-		}
-	}
-#else
 	for (c = 0; c < ARRAY_SIZE(boot_key_list); c++, k++) {
 		if (curr_state[k->col] & BIT(k->row)) {
 			boot_key_mask |= BIT(c);
 			curr_state[k->col] &= ~BIT(k->row);
 		}
 	}
-#endif
 
 	/* If any other key was pressed, ignore all boot keys. */
 	for (c = 0; c < keyboard_cols; c++) {

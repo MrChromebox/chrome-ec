@@ -34,13 +34,11 @@ struct keyboard_scan_config {
 	uint8_t actual_key_mask[KEYBOARD_COLS_MAX];
 };
 
-#ifdef CONFIG_KEYBOARD_MULTIPLE
 /* Boot key list.  Must be in same order as enum boot_key. */
 struct boot_key_entry {
 	uint8_t col;
 	uint8_t row;
 };
-#endif
 
 
 /**
