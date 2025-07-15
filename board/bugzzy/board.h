@@ -201,6 +201,9 @@
 /* LIS2DS Lid accel */
 #define CONFIG_ACCEL_LIS2DS
 
+/* Recursive mutex support */
+#define CONFIG_COMMON_RECURSIVE_MUTEX
+
 #ifndef __ASSEMBLER__
 
 #include "gpio_signal.h"
