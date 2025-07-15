@@ -268,12 +268,14 @@
 #define CONFIG_WATCHDOG_PERIOD_MS 1600
 #elif defined(VARIANT_DEDEDE_EC_NPCX796FC) || \
 	defined(VARIANT_KEEBY_EC_NPCX797FC)
-/* System safe mode for improved panic debugging */
-#define CONFIG_SYSTEM_SAFE_MODE
-#define CONFIG_PANIC_ON_WATCHDOG_WARNING
-/* Increase watchdog timeout since system will panic on warning */
+/* Increase watchdog timeout */
 #undef CONFIG_WATCHDOG_PERIOD_MS
 #define CONFIG_WATCHDOG_PERIOD_MS 2100
+#endif
+
+#ifdef SECTION_IS_RW
+#define CONFIG_PRESERVED_RING_BUF
+#define CONFIG_PANIC_LOG
 #endif
 
 #ifndef __ASSEMBLER__
