@@ -395,8 +395,19 @@ void update_dynamic_battery_info(void)
 	    battery_is_below_threshold(BATT_THRESHOLD_TYPE_SHUTDOWN, false))
 		tmp |= EC_BATT_FLAG_LEVEL_CRITICAL;
 
-	tmp |= curr->batt_is_charging ? EC_BATT_FLAG_CHARGING :
-					EC_BATT_FLAG_DISCHARGING;
+	if (!curr->batt_is_charging) {
+		// Sustainer is discharging or there is insufficient power to
+		// charge (including when there is no charger connected).
+		tmp |= EC_BATT_FLAG_DISCHARGING;
+	} else if (curr->state == ST_IDLE) {
+		// Sustainer is holding state, not charging nor discharging.
+	} else if (curr->batt.status & STATUS_FULLY_CHARGED) {
+		// Fully charged, not actually charging (despite
+		// batt_is_charging).
+	} else {
+		// Otherwise, batt_is_charging and no special case applies.
+		tmp |= EC_BATT_FLAG_CHARGING;
+	}
 
 	if (battery_is_cut_off())
 		tmp |= EC_BATT_FLAG_CUT_OFF;
