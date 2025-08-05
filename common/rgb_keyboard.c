@@ -272,8 +272,6 @@ static int rgbkbd_set_global_brightness(uint8_t gcc)
 		}
 	}
 
-	CPRINTS("Set GCC to %u", gcc);
-
 	/* Return EC_SUCCESS or the last error. */
 	return rv;
 }
