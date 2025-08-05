@@ -266,6 +266,10 @@
  * for IT8320 variants (b/416109671) */
 #undef CONFIG_WATCHDOG_PERIOD_MS
 #define CONFIG_WATCHDOG_PERIOD_MS 1600
+
+/* IT8320 boards shipped with locked watchdog timeout (in RO) */
+#define CONFIG_IT83XX_LOCKED_WATCHDOG_EXTENSION
+
 #elif defined(VARIANT_DEDEDE_EC_NPCX796FC) || \
 	defined(VARIANT_KEEBY_EC_NPCX797FC)
 /* Increase watchdog timeout */

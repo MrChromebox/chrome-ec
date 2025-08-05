@@ -16,9 +16,6 @@
 #undef CONFIG_VOLUME_BUTTONS
 #undef CONFIG_I2C_DEBUG
 
-/* These boards shipped with locked watchdog timeout (in RO) */
-#define CONFIG_IT83XX_LOCKED_WATCHDOG_EXTENSION
-
 /* EC console commands */
 #define CONFIG_CMD_TCPC_DUMP
 #define CONFIG_CMD_CHARGER_DUMP

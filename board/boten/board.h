@@ -107,9 +107,6 @@
 #define CONFIG_DYNAMIC_MOTION_SENSOR_COUNT
 #define CONFIG_BUTTONS_RUNTIME_CONFIG
 
-/* These boards shipped with locked watchdog timeout (in RO) */
-#define CONFIG_IT83XX_LOCKED_WATCHDOG_EXTENSION
-
 #ifndef __ASSEMBLER__
 
 #include "gpio_signal.h"

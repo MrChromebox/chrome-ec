@@ -105,9 +105,6 @@
 /* Always enable pre-WDT interrupt */
 #define CONFIG_IT83XX_PREWDT_ALWAYS_ENABLED
 
-/* These boards shipped with locked watchdog timeout (in RO) */
-#define CONFIG_IT83XX_LOCKED_WATCHDOG_EXTENSION
-
 #ifndef __ASSEMBLER__
 
 #include "gpio_signal.h"
