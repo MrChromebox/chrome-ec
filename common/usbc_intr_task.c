@@ -104,6 +104,7 @@ void pd_interrupt_handler_task(void *p)
 	pd_int_task_id[port] = task_get_current();
 
 	while (1) {
+		bool have_alerts;
 		const int evt = task_wait_event(-1);
 
 		if ((evt & PD_PROCESS_INTERRUPT) == 0)
@@ -119,12 +120,13 @@ void pd_interrupt_handler_task(void *p)
 		 * interrupts. Upon existing suspend, we schedule a
 		 * PD_PROCESS_INTERRUPT to check if we missed anything.
 		 */
-		while ((tcpc_get_alert_status() & port_mask) &&
-		       pd_is_port_enabled(port)) {
-			service_one_port(port);
-		}
-
-		board_process_pd_alert(port);
+		do {
+			have_alerts = (tcpc_get_alert_status() & port_mask) &&
+				      pd_is_port_enabled(port);
+			if (have_alerts)
+				service_one_port(port);
+			board_process_pd_alert(port);
+		} while (have_alerts);
 	}
 }
 
