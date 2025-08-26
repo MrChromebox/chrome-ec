@@ -5523,7 +5523,7 @@ int cmd_panic_log(int argc, char *argv[])
 		fputs("\n", stdout);
 		/* Restore frozen state */
 		if (!info_response.frozen) {
-			info_params = { 0 };
+			memset(&info_params, 0, sizeof(info_params));
 			info_params.unfreeze = 1;
 			rv = ec_command(EC_CMD_PANIC_LOG_INFO, 0, &info_params,
 					sizeof(info_params), &info_response,

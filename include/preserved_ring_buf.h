@@ -27,6 +27,7 @@
 #define __PRESERVED_RING_BUF_H
 
 #include "link_defs.h"
+#include "stdbool.h"
 
 /* Static ring buffer properties */
 typedef struct {

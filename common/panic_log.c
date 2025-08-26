@@ -7,6 +7,7 @@
 #include "panic.h"
 #include "panic_log.h"
 #include "preserved_ring_buf.h"
+#include "stdbool.h"
 #include "util.h"
 
 /* Panic log defaults to frozen */
@@ -110,17 +111,19 @@ void panic_log_write_char(const char c)
  * frozen. */
 void panic_log_write_str(const char *str, const size_t size)
 {
+	int i;
 	if (panic_log_frozen)
 		return;
-	for (int i = 0; i < size; i++)
+	for (i = 0; i < size; i++)
 		preserved_ring_buf_write(panic_log, str[i]);
 }
 
 /* Returns the current state of panic log, before applying any requested changes
  */
-static enum ec_status
+static int
 host_command_get_panic_log_info(struct host_cmd_handler_args *args)
 {
+	bool orig_frozen;
 	struct ec_response_panic_log_info *r = args->response;
 	const struct ec_params_panic_log_info *p = args->params;
 
@@ -128,7 +131,7 @@ host_command_get_panic_log_info(struct host_cmd_handler_args *args)
 		return EC_RES_INVALID_PARAM;
 
 	/* Freeze before while reading */
-	bool orig_frozen = panic_log_freeze(true);
+	orig_frozen = panic_log_freeze(true);
 	r->frozen = orig_frozen;
 	r->version = panic_log_version();
 	r->capacity = panic_log_capacity();
@@ -152,7 +155,7 @@ host_command_get_panic_log_info(struct host_cmd_handler_args *args)
 DECLARE_HOST_COMMAND(EC_CMD_PANIC_LOG_INFO, host_command_get_panic_log_info,
 		     EC_VER_MASK(0));
 
-static enum ec_status
+static int
 host_command_read_panic_log(struct host_cmd_handler_args *args)
 {
 	const struct ec_params_panic_log_read *p = args->params;
@@ -179,8 +182,9 @@ test_export_static void panic_log_corrupt(void)
 	panic_log->properties->checksum = -1;
 }
 
-static int command_panic_log(int argc, const char **argv)
+static int command_panic_log(int argc, char **argv)
 {
+	int i;
 	if ((argc == 1) || (argc == 2 && !strcasecmp(argv[1], "info"))) {
 		bool orig_frozen = panic_log_freeze(true);
 		ccprintf("Valid: %d\n", panic_log_is_valid());
@@ -193,7 +197,7 @@ static int command_panic_log(int argc, const char **argv)
 		bool orig_frozen = panic_log_freeze(true);
 		char dump_buffer[16];
 		panic_printf("=== Panic Log Start ===\n");
-		for (int i = 0; i < panic_log_len();) {
+		for (i = 0; i < panic_log_len();) {
 			int j = 0;
 			for (; j < ARRAY_SIZE(dump_buffer) - 1 &&
 			       i < panic_log_len();
