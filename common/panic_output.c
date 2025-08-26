@@ -140,7 +140,7 @@ uintptr_t get_panic_data_start(void)
 			   - pdata_ptr->struct_size);
 }
 
-static uint32_t get_panic_data_size(void)
+static __maybe_unused uint32_t get_panic_data_size(void)
 {
 	if (pdata_ptr->magic != PANIC_DATA_MAGIC)
 		return 0;

@@ -4,6 +4,7 @@
  */
 
 #include "preserved_ring_buf.h"
+#include "string.h"
 
 #ifdef SECTION_IS_RO
 #error Preserved ring buffer should not be enabled in RO images.
@@ -46,8 +47,9 @@ uint32_t preserved_ring_buf_version(const preserved_ring_buf_t *buf)
 static uint32_t
 preserved_ring_buf_calc_checksum(const preserved_ring_buf_t *buf)
 {
+	int i;
 	uint32_t sum = 0;
-	for (int i = 0; i < buf->constants.capacity; i++) {
+	for (i = 0; i < buf->constants.capacity; i++) {
 		switch (buf->constants.word_size) {
 		case 1:
 			sum += buf->buffer.as_uint8[i];
@@ -131,10 +133,11 @@ preserved_ring_buf_write(const preserved_ring_buf_t *buf, uint32_t word)
 uint32_t preserved_ring_buf_read(const preserved_ring_buf_t *buf,
 				 const uint32_t offset)
 {
+	uint32_t index;
 	uint32_t tail = 0;
 	if (buf->properties->head > buf->constants.capacity)
 		tail = buf->properties->head;
-	const uint32_t index = (tail + offset) % buf->constants.capacity;
+	index = (tail + offset) % buf->constants.capacity;
 	switch (buf->constants.word_size) {
 	case 1:
 		return buf->buffer.as_uint8[index];
