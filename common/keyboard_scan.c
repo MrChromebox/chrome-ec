@@ -955,6 +955,9 @@ void keyboard_scan_init(void)
 		CPRINTS("WARN: Debounce durations not equal");
 	}
 
+	/* Configure GPIO */
+	keyboard_raw_init();
+
 	/* Tri-state the columns */
 	keyboard_raw_drive_column(KEYBOARD_COLUMN_NONE);
 
