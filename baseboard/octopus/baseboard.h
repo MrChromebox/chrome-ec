@@ -65,6 +65,12 @@
 	#undef CONFIG_WATCHDOG_PERIOD_MS
 	#define CONFIG_WATCHDOG_PERIOD_MS 2100
 
+/* Enable panic log in RW image to preserve log before panic */
+#ifdef SECTION_IS_RW
+#define CONFIG_PRESERVED_RING_BUF
+#define CONFIG_PANIC_LOG
+#endif
+
 #elif defined(VARIANT_OCTOPUS_EC_ITE8320)
 	 /* Flash clock must be > (50Mhz / 2) */
 	#define CONFIG_IT83XX_FLASH_CLOCK_48MHZ
