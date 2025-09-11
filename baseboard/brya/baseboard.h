@@ -237,6 +237,12 @@
 #define BASEBOARD_POWERBTN_TASK_STACK_SIZE 1088
 #define BASEBOARD_RGBKBD_TASK_STACK_SIZE 2048
 
+/* Enable Panic Log for debugging crashes */
+#ifdef SECTION_IS_RW
+#define CONFIG_PRESERVED_RING_BUF
+#define CONFIG_PANIC_LOG
+#endif
+
 #ifndef __ASSEMBLER__
 
 #include "baseboard_usbc_config.h"
