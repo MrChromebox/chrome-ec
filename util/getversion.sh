@@ -208,7 +208,7 @@ main() {
   if [[ -n "${STATIC_VERSION}" ]] || [[ "${REPRODUCIBLE_BUILD}" = 1 ]]; then
     echo '#define BUILDER "reproducible@build"'
   else
-    echo "#define BUILDER \"${USER}@$(hostname)\""
+    echo "#define BUILDER \"MrChromebox\""
   fi
 
   if [[ -n "${STATIC_VERSION}" ]]; then
@@ -254,8 +254,9 @@ main() {
     echo "/* CrOS FWID of this build */"
     echo "#define CROS_FWID32 \"${fwid:0:31}\""
   else
+    fwid="${BOARD}_16238.2+tbt5"
     echo "/* CrOS FWID is not available for this build */"
-    echo "#define CROS_FWID32 CROS_FWID_MISSING_STR"
+    echo "#define CROS_FWID32 \"$fwid\""
   fi
 }
 
