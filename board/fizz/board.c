@@ -240,7 +240,9 @@ void board_tcpc_init(void)
 	/* This needs to be executed only once per boot. It could be run by RO
 	 * if we boot in recovery mode. It could be run by RW if we boot in
 	 * normal or dev mode. Note EFS makes RO jump to RW before HOOK_INIT. */
-	board_reset_pd_mcu();
+	/* Skip PD reset after sysjump to preserve the active PD connection */
+	if (!(system_get_reset_flags() & RESET_FLAG_SYSJUMP))
+		board_reset_pd_mcu();
 
 	/*
 	 * Wake up PS8751. If PS8751 remains in low power mode after sysjump,
@@ -254,11 +256,15 @@ void board_tcpc_init(void)
 
 	/*
 	 * Initialize HPD to low; after sysjump SOC needs to see
-	 * HPD pulse to enable video path
+	 * HPD pulse to enable video path.
+	 * Skip this after sysjump to avoid I2C transactions that might
+	 * disrupt the TCPC state during PD connection preservation.
 	 */
-	for (port = 0; port < CONFIG_USB_PD_PORT_COUNT; port++) {
-		const struct usb_mux *mux = &usb_muxes[port];
-		mux->hpd_update(port, 0, 0);
+	if (!(system_get_reset_flags() & RESET_FLAG_SYSJUMP)) {
+		for (port = 0; port < CONFIG_USB_PD_PORT_COUNT; port++) {
+			const struct usb_mux *mux = &usb_muxes[port];
+			mux->hpd_update(port, 0, 0);
+		}
 	}
 }
 DECLARE_HOOK(HOOK_INIT, board_tcpc_init, HOOK_PRIO_INIT_I2C+1);
@@ -848,7 +854,16 @@ static void board_charge_manager_init(void)
 	/* Initialize the power source supplier */
 	switch (port) {
 	case CHARGE_PORT_TYPEC0:
-		typec_set_input_current_limit(port, 3000, 5000);
+		/*
+		 * After sysjump, the PD task will set the actual power.
+		 * Set a temporary high value to satisfy power checks and
+		 * seed the charge manager so board_set_charge_limit gets
+		 * called to update the LED.
+		 */
+		if (system_get_reset_flags() & RESET_FLAG_SYSJUMP)
+			typec_set_input_current_limit(port, 3000, 20000);
+		else
+			typec_set_input_current_limit(port, 3000, 5000);
 		break;
 	case CHARGE_PORT_BARRELJACK:
 		setup_bj();

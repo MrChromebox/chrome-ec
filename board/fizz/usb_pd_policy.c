@@ -221,6 +221,7 @@ int pd_custom_vdm(int port, int cnt, uint32_t *payload,
 int board_set_active_charge_port(int port)
 {
 	const int active_port = charge_manager_get_active_charge_port();
+	static int initialized;
 
 	if (port < 0 || CHARGE_PORT_COUNT <= port)
 		return EC_ERROR_INVAL;
@@ -232,6 +233,18 @@ int board_set_active_charge_port(int port)
 	if (board_vbus_source_enabled(port))
 		return EC_ERROR_INVAL;
 
+	/*
+	 * After sysjump, charge_manager's state is reset but the actual port
+	 * is still active. Detect the first call after sysjump and accept it
+	 * without changing GPIOs to avoid disrupting the active power source.
+	 */
+	if (!initialized && (system_get_reset_flags() & RESET_FLAG_SYSJUMP)) {
+		initialized = 1;
+		CPRINTS("Charge port p%d (sysjump)", port);
+		return EC_SUCCESS;
+	}
+
+	initialized = 1;
 	CPRINTS("New charger p%d", port);
 
 	switch (port) {
