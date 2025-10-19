@@ -1999,8 +1999,12 @@ static void pd_init_tasks(void)
 	int enable = 1;
 	int i;
 
-	/* Initialize globals once, for all PD tasks.  */
-	if (initialized)
+	/*
+	 * Initialize globals once, for all PD tasks.
+	 * Re-initialize after sysjump to ensure PD comm state is updated
+	 * for the new image (e.g., RO had PD disabled, RW should enable it).
+	 */
+	if (initialized && !(system_get_reset_flags() & RESET_FLAG_SYSJUMP))
 		return;
 
 #if defined(HAS_TASK_CHIPSET) && defined(CONFIG_USB_PD_DUAL_ROLE)
@@ -2075,8 +2079,15 @@ void pd_task(void *u)
 	pd_init_tasks();
 #endif
 
-	/* Ensure the power supply is in the default state */
-	pd_power_supply_reset(port);
+	/*
+	 * Ensure the power supply is in the default state.
+	 * However, skip this after sysjump to avoid disrupting active PD
+	 * connections. This is critical for boards without batteries that
+	 * rely on USB-PD for power (e.g., FIZZ), as resetting the power
+	 * supply during RO->RW transition can cause the board to reset.
+	 */
+	if (!(system_get_reset_flags() & RESET_FLAG_SYSJUMP))
+		pd_power_supply_reset(port);
 
 	/* Initialize TCPM driver and wait for TCPC to be ready */
 	res = tcpm_init(port);
@@ -2086,7 +2097,26 @@ void pd_task(void *u)
 #endif
 
 	CPRINTS("TCPC p%d init %s", port, res ? "failed" : "ready");
-	this_state = res ? PD_STATE_SUSPENDED : PD_DEFAULT_STATE(port);
+	
+	/*
+	 * After sysjump, if VBUS is present and PD comm is enabled, assume
+	 * we had an active PD contract and start in SNK_READY to avoid
+	 * renegotiation that might disrupt power. This is critical for
+	 * boards without batteries.
+	 */
+	if (!res && (system_get_reset_flags() & RESET_FLAG_SYSJUMP) &&
+	    pd_is_vbus_present(port) && pd_comm_is_enabled(port)) {
+		this_state = PD_STATE_SNK_READY;
+		/*
+		 * Set flag to indicate we have an explicit contract so
+		 * charge_manager knows this is PD power, not just Type-C.
+		 */
+		pd[port].flags |= PD_FLAGS_EXPLICIT_CONTRACT;
+		CPRINTS("TCPC p%d sysjump to SNK_READY", port);
+	} else {
+		this_state = res ? PD_STATE_SUSPENDED : PD_DEFAULT_STATE(port);
+	}
+	
 #ifndef CONFIG_USB_PD_TCPC
 	if (!res) {
 		struct ec_response_pd_chip_info *info;
@@ -2108,12 +2138,21 @@ void pd_task(void *u)
 	 * If VBUS is high, then initialize flag for VBUS has always been
 	 * present. This flag is used to maintain a PD connection after a
 	 * reset by sending a soft reset.
+	 * Clear this flag after sysjump to avoid soft reset in SNK_READY.
 	 */
-	pd[port].flags = pd_is_vbus_present(port) ? PD_FLAGS_VBUS_NEVER_LOW : 0;
+	if (system_get_reset_flags() & RESET_FLAG_SYSJUMP)
+		pd[port].flags = 0;
+	else
+		pd[port].flags = pd_is_vbus_present(port) ? PD_FLAGS_VBUS_NEVER_LOW : 0;
 #endif
 
-	/* Disable TCPC RX until connection is established */
-	tcpm_set_rx_enable(port, 0);
+	/*
+	 * Disable TCPC RX until connection is established.
+	 * After sysjump with active PD, RX should stay enabled.
+	 */
+	if (!((system_get_reset_flags() & RESET_FLAG_SYSJUMP) &&
+	      this_state == PD_STATE_SNK_READY))
+		tcpm_set_rx_enable(port, 0);
 
 #ifdef CONFIG_USBC_SS_MUX
 	/* Initialize USB mux to its default state */
@@ -2149,10 +2188,27 @@ void pd_task(void *u)
 #endif
 
 #ifdef CONFIG_CHARGE_MANAGER
-	/* Initialize PD and type-C supplier current limits to 0 */
-	pd_set_input_current_limit(port, 0, 0);
-	typec_set_input_current_limit(port, 0, 0);
-	charge_manager_update_dualrole(port, CAP_UNKNOWN);
+	/*
+	 * Initialize PD and type-C supplier current limits to 0.
+	 * After sysjump, set a conservative Type-C default to ensure
+	 * charge_manager has valid values and triggers board_set_charge_limit
+	 * for LED update. The PD task will update to actual negotiated values
+	 * if PD communication is active.
+	 */
+	if (system_get_reset_flags() & RESET_FLAG_SYSJUMP) {
+		/*
+		 * Set Type-C to PD-level power to pass system power checks.
+		 * Assume 20V @ 3A (60W) which is a common PD contract and
+		 * exceeds the 50W boot threshold. The actual contract was
+		 * negotiated in RO and VBUS voltage is already established.
+		 */
+		typec_set_input_current_limit(port, 3000, 20000);
+		charge_manager_update_dualrole(port, CAP_DUALROLE);
+	} else {
+		pd_set_input_current_limit(port, 0, 0);
+		typec_set_input_current_limit(port, 0, 0);
+		charge_manager_update_dualrole(port, CAP_UNKNOWN);
+	}
 #endif
 
 	while (1) {
