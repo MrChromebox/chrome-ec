@@ -817,10 +817,8 @@ bool is_cable_speed_gen2_capable(int port)
 						USB_R20_SS_U31_GEN1_GEN2;
 
 	case PD_REV30:
-		return disc->identity.product_t1.p_rev30.ss ==
-						USB_R30_SS_U32_U40_GEN2 ||
-		       disc->identity.product_t1.p_rev30.ss ==
-						USB_R30_SS_U40_GEN3;
+		return disc->identity.product_t1.p_rev30.ss >=
+			       USB_R30_SS_U32_U40_GEN2;
 	default:
 		return false;
 	}
@@ -895,12 +893,8 @@ static bool is_tbt_cable_superspeed(int port)
 
 	if (IS_ENABLED(CONFIG_USB_PD_REV30) &&
 	   is_pd_rev3(port, TCPC_TX_SOP_PRIME))
-		return  disc->identity.product_t1.p_rev30.ss ==
-						USB_R30_SS_U32_U40_GEN1 ||
-			disc->identity.product_t1.p_rev30.ss ==
-						USB_R30_SS_U32_U40_GEN2 ||
-			disc->identity.product_t1.p_rev30.ss ==
-						USB_R30_SS_U40_GEN3;
+		return disc->identity.product_t1.p_rev30.ss !=
+			       USB_R30_SS_U2_ONLY;
 
 	return  disc->identity.product_t1.p_rev20.ss ==
 						USB_R20_SS_U31_GEN1 ||
@@ -911,14 +905,14 @@ static bool is_tbt_cable_superspeed(int port)
 static enum tbt_compat_cable_speed usb_rev30_to_tbt_speed(enum usb_rev30_ss ss)
 {
 	switch (ss) {
+	case USB_R30_SS_U2_ONLY:
+		return TBT_SS_U32_GEN1_GEN2;
 	case USB_R30_SS_U32_U40_GEN1:
 		return TBT_SS_U31_GEN1;
 	case USB_R30_SS_U32_U40_GEN2:
 		return TBT_SS_U32_GEN1_GEN2;
-	case USB_R30_SS_U40_GEN3:
-		return TBT_SS_TBT_GEN3;
 	default:
-		return TBT_SS_U32_GEN1_GEN2;
+		return TBT_SS_TBT_GEN3;
 	}
 }
 
