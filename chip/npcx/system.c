@@ -277,23 +277,26 @@ void chip_panic_data_backup(void)
 	bbram_data_write(BKUP_LREG1, d->cm.regs[1]);
 	bbram_data_write(BKUP_LREG3, d->cm.regs[3]);
 	bbram_data_write(BKUP_LREG4, d->cm.regs[4]);
-	bbram_data_write(BBRM_DATA_INDEX_PANIC_FLAGS, BKUP_PANIC_DATA_VALID);
+	bbram_data_write(BBRM_DATA_INDEX_PANIC_FLAGS,
+			 d->flags | BKUP_PANIC_DATA_VALID);
 }
 
 static void chip_panic_data_restore(void)
 {
 	struct panic_data *d = PANIC_DATA_PTR;
+	uint8_t panic_flags;
 
 	/* Ensure BBRAM is valid. */
 	if (!bbram_valid(BKUP_MMFS, 4))
 		return;
 
+	panic_flags = bbram_data_read(BBRM_DATA_INDEX_PANIC_FLAGS);
 	/* Ensure Panic data in BBRAM is valid. */
-	if (!(bbram_data_read(BBRM_DATA_INDEX_PANIC_FLAGS) &
-	      BKUP_PANIC_DATA_VALID))
+	if (!(panic_flags & BKUP_PANIC_DATA_VALID))
 		return;
 
 	memset(d, 0, sizeof(*d));
+	d->flags = panic_flags;
 	d->magic = PANIC_DATA_MAGIC;
 	d->struct_size = sizeof(*d);
 	d->struct_version = 2;
