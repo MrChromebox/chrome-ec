@@ -30,8 +30,8 @@ enum bbram_data_index {
 	BBRM_DATA_INDEX_PANIC_BKUP = 36,       /* Panic data (index 35-63)*/
 };
 
-/* Issue a watchdog reset*/
-void system_watchdog_reset(void);
+/* Issue a watchdog reset */
+void system_watchdog_reset(int enable_interrupt);
 
 /*
  * Configure the specific memory addresses in the the MPU
