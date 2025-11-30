@@ -66,6 +66,9 @@
 /* EC console commands */
 #define CONFIG_CMD_BUTTON
 
+/* Enable After G3 State. */
+#define CONFIG_AFTER_G3_STATE
+
 /* SOC */
 #define CONFIG_CHIPSET_SKYLAKE
 #define CONFIG_CHIPSET_HAS_PLATFORM_PMIC_RESET
