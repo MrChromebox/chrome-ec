@@ -5095,6 +5095,56 @@ struct __ec_align_size1 ec_params_charger_control {
 };
 
 /*****************************************************************************/
+/* Custom MrChromebox commands: range 0x3AC0-0x3ACF */
+
+/*
+ * NOTE: Before allocating new ID for a command, check if it is not used by
+ * other boards in current coreboot ec_commands.h:
+ *   https://github.com/MrChromebox/coreboot
+ *   src/ec/google/chromeec/ec_commands.h
+ */
+
+/* Set and/or get After G3 State value. */
+#define EC_CMD_AFTER_G3_STATE 0x3AC0
+
+enum ec_after_g3_state {
+	/* Unknown state. */
+	EC_AFTER_G3_STATE_UNKNOWN = 0,
+	/* After restoring power device should always stay off. */
+	EC_AFTER_G3_STATE_OFF,
+	/* After restoring power device should always auto power on. */
+	EC_AFTER_G3_STATE_ON,
+	/*
+	 * After restoring power device should only stay off if power was lost
+	 * after graceful shutdown, otherwise it should auto power on.
+	 */
+	EC_AFTER_G3_STATE_PREVIOUS,
+
+	/* Special Values */
+
+	/* Make the command act as a getter only. */
+	EC_AFTER_G3_STATE_GET = 100,
+	/* Used for response only. Indicates internal command error. */
+	EC_AFTER_G3_STATE_ERROR
+};
+
+struct __ec_align1 ec_params_after_g3_state {
+	/*
+	 * Set After G3 State value. Passing EC_AFTER_G3_STATE_GET makes the
+	 * command act as a getter only.
+	 */
+	uint8_t set_state; /* enum ec_after_g3_state */
+};
+
+struct __ec_align1 ec_response_after_g3_state {
+	/*
+	 * Current After G3 State value. EC_AFTER_G3_STATE_ERROR indicates
+	 * command failure to set/get value.
+	 */
+	uint8_t cur_state; /* enum ec_after_g3_state */
+};
+
+/*****************************************************************************/
 /*
  * Reserve a range of host commands for board-specific, experimental, or
  * special purpose features. These can be (re)used without updating this file.
