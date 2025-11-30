@@ -115,6 +115,409 @@ static void power_button_init(void)
 }
 DECLARE_HOOK(HOOK_INIT, power_button_init, HOOK_PRIO_INIT_POWER_BUTTON);
 
+/* After G3 State - enabling will disable legacy OFF reset flag handling. */
+#ifdef CONFIG_AFTER_G3_STATE
+
+static const char *ag3s_title = "After G3 State";
+
+/*
+ * Value set here (enum ec_after_g3_state) represents the default after G3
+ * behavior, which can be later changed via command/coreboot.
+ */
+#define AG3S_DEFAULT_STATE (EC_AFTER_G3_STATE_PREVIOUS)
+
+static enum ec_after_g3_state ag3s_state = AG3S_DEFAULT_STATE;
+
+/* Order should match enum ec_after_g3_state, starting from value 0. */
+static const char *ag3s_name_table[] = { "off", "on", "previous" };
+
+static inline const char *ag3s_get_state_name(enum ec_after_g3_state state)
+{
+	return ((state >= EC_AFTER_G3_STATE_OFF &&
+		 state <= EC_AFTER_G3_STATE_PREVIOUS) ?
+		ag3s_name_table[state] : NULL);
+}
+
+static enum ec_after_g3_state ag3s_find_state_by_name(const char *name)
+{
+	int i, len;
+	for (i = 0, len = ARRAY_SIZE(ag3s_name_table); i < len; ++i) {
+		if (!strcasecmp(name, ag3s_name_table[i]))
+			return i;
+	}
+	return EC_AFTER_G3_STATE_UNKNOWN;
+}
+
+static inline enum ec_after_g3_state ag3s_get_state(void)
+{
+	return ag3s_state;
+}
+
+static inline void ag3s_sync(void);
+
+static int ag3s_set_state(enum ec_after_g3_state state)
+{
+	const char *state_name = ag3s_get_state_name(state);
+	if (!state_name)
+		return 0;
+
+	CPRINTS("%s: Updating to '%s'", ag3s_title, state_name);
+
+	ag3s_state = state;
+
+	ag3s_sync();
+
+	return 1;
+}
+
+/* Clearing operation always take precedence over saving for the same target. */
+enum ag3s_reset_flags_op_flags {
+	AG3S_RFO_SET_BBRM = (1 << 0),
+	AG3S_RFO_SET_SYS  = (1 << 1),
+	AG3S_RFO_CLR_BBRM = (1 << 2),
+	AG3S_RFO_CLR_SYS  = (1 << 3)
+};
+
+/* Reset flags used to keep the device off. */
+#define AG3S_RESET_FLAG_OFF      (RESET_FLAG_AP_OFF)
+#define AG3S_RESET_FLAG_OFF_NAME "AP_OFF"
+
+static void ag3s_update_off_reset_flags(int rfo_flags)
+{
+	static const char *op_set = "+";
+	static const char *op_clr = "-";
+	static const char *op_eq  = "=";
+
+	const char *op_bbram, *op_sys;
+
+	if (!rfo_flags)
+		return;
+
+	if (rfo_flags & AG3S_RFO_CLR_BBRM) {
+		chip_save_reset_flags(chip_read_reset_flags() &
+				      ~AG3S_RESET_FLAG_OFF);
+		op_bbram = op_clr;
+	} else if (rfo_flags & AG3S_RFO_SET_BBRM) {
+		chip_save_reset_flags(chip_read_reset_flags() |
+				      AG3S_RESET_FLAG_OFF);
+		op_bbram = op_set;
+	} else {
+		op_bbram = op_eq;
+	}
+
+	if (rfo_flags & AG3S_RFO_CLR_SYS) {
+		system_clear_reset_flags(AG3S_RESET_FLAG_OFF);
+		op_sys = op_clr;
+	} else if (rfo_flags & AG3S_RFO_SET_SYS) {
+		system_set_reset_flags(AG3S_RESET_FLAG_OFF);
+		op_sys = op_set;
+	} else {
+		op_sys = op_eq;
+	}
+
+	CPRINTS("%s: " AG3S_RESET_FLAG_OFF_NAME " flag updated"
+	        " (%sbbram, %ssys)", ag3s_title, op_bbram, op_sys);
+}
+
+static inline int ag3s_are_any_off_bbram_reset_flags_set(void)
+{
+	return !!(chip_read_reset_flags() & AG3S_RESET_FLAG_OFF);
+}
+
+static inline int ag3s_are_any_non_off_bbram_reset_flags_set(void)
+{
+	return !!(chip_read_reset_flags() & ~AG3S_RESET_FLAG_OFF);
+}
+
+enum ag3s_sync_hook {
+	/* Reserved for non-hook sync request. */
+	AG3S_SYNC_HOOK_NONE = -1,
+	/*
+	 * HOOK_INIT with HOOK_PRIO_DEFAULT-1.
+	 *
+	 * Called before power button initial state is configured (on HOOK_INIT
+	 * with HOOK_PRIO_DEFAULT). Changing OFF system reset flags at this
+	 * point can either make the device remain off or auto power it on.
+	 */
+	AG3S_SYNC_HOOK_INIT_BEFORE_PB_ISTATE,
+	/*
+	 * HOOK_INIT with HOOK_PRIO_DEFAULT+1.
+	 *
+	 * Called after power button initial state is configured.
+	 */
+	AG3S_SYNC_HOOK_INIT_AFTER_PB_ISTATE,
+	/*
+	 * HOOK_CHIPSET_STARTUP with HOOK_PRIO_DEFAULT.
+	 *
+	 * Called on chipset startup.
+	 */
+	AG3S_SYNC_HOOK_CHIPSET_STARTUP,
+	/*
+	 * HOOK_CHIPSET_SHUTDOWN with HOOK_PRIO_DEFAULT-1.
+	 *
+	 * Called when chipset is shutting down. Priority is slightly higher
+	 * than handle_pending_reboot() (HOOK_PRIO_DEFAULT).
+	 *
+	 * Chipset is still NOT OFF at this point, trying to check for
+	 * CHIPSET_STATE_ANY_OFF will evaluate to FALSE.
+	 */
+	AG3S_SYNC_HOOK_CHIPSET_SHUTDOWN,
+	/*
+	 * HOOK_SYSJUMP with HOOK_PRIO_LAST.
+	 *
+	 * Called before making a jump to another image, as late as possible.
+	 *
+	 * Attempting to modify system reset flags from this hook has no effect,
+	 * as these flags are already saved to jump data prior to calling
+	 * HOOK_SYSJUMP.
+	 *
+	 * This hook requires explicit console flushing to avoid truncated
+	 * output, since it is called right before jumping.
+	 *
+	 * Only used to fix FIZZ EC bug. See AG3S_SYNC_HOOK_SYSJUMP case in
+	 * ag3s_sync_on_hook() for more info.
+	 */
+	AG3S_SYNC_HOOK_SYSJUMP
+};
+
+static void ag3s_sync_on_hook(enum ag3s_sync_hook sync_hook);
+
+#define AG3S_SYNC_ON_HOOK(d_sync_hook_enum, d_hook, d_hook_priority) \
+	static void ag3s_sync_on_hook_##d_sync_hook_enum(void) \
+	{ \
+		ag3s_sync_on_hook(d_sync_hook_enum); \
+	} \
+	DECLARE_HOOK(d_hook, ag3s_sync_on_hook_##d_sync_hook_enum, \
+		     d_hook_priority)
+
+/* Sync on all valid hooks in enum ag3s_sync_hook. */
+AG3S_SYNC_ON_HOOK(AG3S_SYNC_HOOK_INIT_BEFORE_PB_ISTATE, HOOK_INIT,
+		  HOOK_PRIO_DEFAULT-1);
+AG3S_SYNC_ON_HOOK(AG3S_SYNC_HOOK_INIT_AFTER_PB_ISTATE, HOOK_INIT,
+		  HOOK_PRIO_DEFAULT+1);
+AG3S_SYNC_ON_HOOK(AG3S_SYNC_HOOK_CHIPSET_STARTUP, HOOK_CHIPSET_STARTUP,
+		  HOOK_PRIO_DEFAULT);
+AG3S_SYNC_ON_HOOK(AG3S_SYNC_HOOK_CHIPSET_SHUTDOWN, HOOK_CHIPSET_SHUTDOWN,
+		  HOOK_PRIO_DEFAULT-1);
+AG3S_SYNC_ON_HOOK(AG3S_SYNC_HOOK_SYSJUMP, HOOK_SYSJUMP, HOOK_PRIO_LAST);
+
+static void ag3s_sync_on_hook(enum ag3s_sync_hook sync_hook)
+{
+	int rfo_flags = 0;
+	int is_device_on;
+	enum ec_after_g3_state state;
+	const char *state_name;
+
+	/*
+	 * CHIPSET_STATE_ANY_OFF will not evaluate to TRUE on chipset shutdown,
+	 * so instead we always assume the device is going off.
+	 */
+	is_device_on = (sync_hook != AG3S_SYNC_HOOK_CHIPSET_SHUTDOWN &&
+			!chipset_in_state(CHIPSET_STATE_ANY_OFF));
+
+	state = ag3s_get_state();
+	state_name = ag3s_get_state_name(state);
+	if (!state_name) {
+		/* Fallback to default state if state is invalid. */
+		state = AG3S_DEFAULT_STATE;
+		state_name = "x";
+	}
+
+	CPRINTS("%s: Sync on hook %d (%s)", ag3s_title, sync_hook, state_name);
+
+	/*
+	 * Some hooks may require special handling of reset flags. These hooks
+	 * take precedence over proper flag sync.
+	 */
+	switch(sync_hook) {
+	case AG3S_SYNC_HOOK_INIT_BEFORE_PB_ISTATE:
+		if (is_device_on) {
+			/*
+			 * Unset OFF system reset flags if device is on,
+			 * otherwise power button initial state setup may cause
+			 * abnormal state.
+			 */
+			rfo_flags = AG3S_RFO_CLR_SYS;
+		} else if (ag3s_are_any_off_bbram_reset_flags_set()) {
+			/*
+			 * Presence of OFF bbram reset flags, while the device
+			 * is off, indicates that it should remain off. Set OFF
+			 * system reset flags to ensure power button initial
+			 * state setup will prevent auto power on.
+			 */
+			rfo_flags = AG3S_RFO_SET_SYS;
+		}
+
+		/* Proper flag sync will be done after power button init. */
+		goto update_off_reset_flags;
+	case AG3S_SYNC_HOOK_CHIPSET_SHUTDOWN:
+		if (state == EC_AFTER_G3_STATE_PREVIOUS &&
+		    chipset_get_shutdown_reason() ==
+		    CHIPSET_SHUTDOWN_POWERFAIL) {
+			/*
+			 * Skip saving OFF bbram reset flags for "Previous
+			 * State" behavior if shutting down due to power
+			 * failure. This ensures that the device will remain off
+			 * when power is restored only if shutdown was graceful,
+			 * otherwise it will auto power on.
+			 */
+			return;
+		}
+		break;
+	case AG3S_SYNC_HOOK_SYSJUMP:
+		/*
+		 * In the bugged image, the "system_reset == 0" condition
+		 * (system reset flags == 0) in system_common_pre_init() will
+		 * cause jump data to be discarded. This makes system reset
+		 * flags reflect what was passed in bbram reset flags at the
+		 * time of the jump instead of system reset flags passed via
+		 * jump data. These flags can then get carried to power button
+		 * initial state setup and cause issues.
+		 */
+		if (ag3s_are_any_non_off_bbram_reset_flags_set()) {
+			/*
+			 * If non-OFF bbram reset flags are present, then the
+			 * jump will be bugged and system reset flags will
+			 * reflect bbram reset flags at the time of the jump.
+			 * Adjust OFF bbram reset flags to match the device
+			 * state to ensure no issues in power button initial
+			 * state setup after the jump...
+			 */
+			if (is_device_on) {
+				/* The device is on, prevent abnormal state. */
+				rfo_flags = AG3S_RFO_CLR_BBRM;
+			} else {
+				/* The device is off, prevent auto power on. */
+				rfo_flags = AG3S_RFO_SET_BBRM;
+			}
+		} else {
+			/*
+			 * If non-OFF bbram reset flags are not set, then we
+			 * just unset OFF bbram reset flags to make sure there
+			 * are no bbram reset flags at all. This allows to
+			 * avoid triggering the bug.
+			 */
+			rfo_flags = AG3S_RFO_CLR_BBRM;
+		}
+
+		/*
+		 * This hook requires explicit console flushing to avoid
+		 * truncated output, since it is called right before jumping.
+		 */
+		ag3s_update_off_reset_flags(rfo_flags);
+		cflush();
+
+		/* Proper flag sync skipped due to the pre-jump flag fix. */
+		return;
+	case AG3S_SYNC_HOOK_INIT_AFTER_PB_ISTATE:
+	case AG3S_SYNC_HOOK_CHIPSET_STARTUP:
+	case AG3S_SYNC_HOOK_NONE:
+	default:
+		/* No special action needed, just do proper flag sync. */
+		break;
+	}
+
+	/* Sync OFF bbram reset flags to match the current after G3 behavior. */
+	switch (state) {
+	case EC_AFTER_G3_STATE_OFF:
+		/* Keep the device off when power is restored. */
+		rfo_flags = AG3S_RFO_SET_BBRM;
+		break;
+	case EC_AFTER_G3_STATE_ON:
+		/* Auto power on the device when power is restored. */
+		rfo_flags = AG3S_RFO_CLR_BBRM;
+		break;
+	case EC_AFTER_G3_STATE_PREVIOUS:
+	default: /* Fallback to "Previous State" if state is invalid. */
+		/* Match the device state when power is restored... */
+		if (is_device_on) {
+			/* The device is on, auto power it on. */
+			rfo_flags = AG3S_RFO_CLR_BBRM;
+		} else {
+			/* The device is off, keep the device off. */
+			rfo_flags = AG3S_RFO_SET_BBRM;
+		}
+		break;
+	}
+
+	/*
+	 * Sync OFF system reset flags to match the device state, otherwise
+	 * these flags can get carried via jump data to power button initial
+	 * state setup and cause issues after any potential future jump...
+	 */
+	 if (is_device_on) {
+		 /* The device is on, prevent abnormal state. */
+		 rfo_flags |= AG3S_RFO_CLR_SYS;
+	 } else {
+		 /* The device is off, prevent auto power on. */
+		 rfo_flags |= AG3S_RFO_SET_SYS;
+	 }
+
+update_off_reset_flags:
+	ag3s_update_off_reset_flags(rfo_flags);
+}
+
+static inline void ag3s_sync(void)
+{
+	ag3s_sync_on_hook(AG3S_SYNC_HOOK_NONE);
+}
+
+static int host_command_after_g3_state_set(struct host_cmd_handler_args *args)
+{
+	const struct ec_params_after_g3_state_set *p = args->params;
+
+	if (!ag3s_set_state(p->state))
+		return EC_RES_ERROR;
+
+	return EC_RES_SUCCESS;
+}
+DECLARE_HOST_COMMAND(EC_CMD_AFTER_G3_STATE_SET, host_command_after_g3_state_set,
+		     EC_VER_MASK(0));
+
+static int host_command_after_g3_state_get(struct host_cmd_handler_args *args)
+{
+	struct ec_response_after_g3_state_get *r = args->response;
+
+	r->state = (int8_t)ag3s_get_state();
+	args->response_size = sizeof(*r);
+
+	return EC_RES_SUCCESS;
+}
+DECLARE_HOST_COMMAND(EC_CMD_AFTER_G3_STATE_GET, host_command_after_g3_state_get,
+		     EC_VER_MASK(0));
+
+static int command_after_g3_state(int argc, char **argv)
+{
+	enum ec_after_g3_state state;
+	const char *state_name;
+
+	if (argc < 2) {
+		state = ag3s_get_state();
+	} else if (argc == 2) {
+		state = ag3s_find_state_by_name(argv[1]);
+		if (state == EC_AFTER_G3_STATE_UNKNOWN)
+			return EC_ERROR_PARAM1;
+
+		if (!ag3s_set_state(state))
+			return EC_ERROR_UNKNOWN;
+	} else {
+		return EC_ERROR_PARAM_COUNT;
+	}
+
+	state_name = ag3s_get_state_name(state);
+	if (!state_name)
+		return EC_ERROR_UNKNOWN;
+
+	ccprintf("%s: %s\n", ag3s_title, state_name);
+
+	return EC_SUCCESS;
+}
+DECLARE_CONSOLE_COMMAND(afterg3state, command_after_g3_state,
+			"[off|on|previous]",
+			"Get or set After G3 State value");
+
+#else /* !CONFIG_AFTER_G3_STATE */
+
 #ifdef CONFIG_POWER_BUTTON_INIT_IDLE
 /*
  * Set/clear AP_IDLE flag. It's set when the system gracefully shuts down and
@@ -148,6 +551,8 @@ DECLARE_HOOK(HOOK_CHIPSET_SHUTDOWN, pb_chipset_shutdown,
 	      */
 	     HOOK_PRIO_DEFAULT - 1);
 #endif
+
+#endif /* CONFIG_AFTER_G3_STATE */
 
 /**
  * Handle debounced power button changing state.

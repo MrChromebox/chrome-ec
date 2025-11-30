@@ -5095,6 +5095,36 @@ struct __ec_align_size1 ec_params_charger_control {
 };
 
 /*****************************************************************************/
+/* Custom MrChromebox commands: range 0x3AC0-0x3ACF */
+
+/* Set After G3 State value. */
+#define EC_CMD_AFTER_G3_STATE_SET 0x3AC0
+/* Get After G3 State value. */
+#define EC_CMD_AFTER_G3_STATE_GET 0x3AC1
+
+enum ec_after_g3_state {
+	/* Reserved for unknown state. */
+	EC_AFTER_G3_STATE_UNKNOWN = -1,
+	/* Keep the device off when power is restored. */
+	EC_AFTER_G3_STATE_OFF,
+	/* Auto power on the device when power is restored. */
+	EC_AFTER_G3_STATE_ON,
+	/*
+	 * Keep the device off when power is restored only if it was gracefully
+	 * powered down prior to losing power, otherwise auto power it on.
+	 */
+	EC_AFTER_G3_STATE_PREVIOUS
+};
+
+struct __ec_align1 ec_params_after_g3_state_set {
+	int8_t state; /* enum ec_after_g3_state */
+};
+
+struct __ec_align1 ec_response_after_g3_state_get {
+	int8_t state; /* enum ec_after_g3_state */
+};
+
+/*****************************************************************************/
 /*
  * Reserve a range of host commands for board-specific, experimental, or
  * special purpose features. These can be (re)used without updating this file.
