@@ -66,6 +66,13 @@
 /* EC console commands */
 #define CONFIG_CMD_BUTTON
 
+/* Enable After G3 State. */
+#define CONFIG_AFTER_G3_STATE
+/* RO for FIZZ only supports AP_OFF as OFF flag. */
+#define CONFIG_AFTER_G3_STATE_USE_AP_OFF_AS_OFF_FLAG
+/* RO for FIZZ is bugged when jumping from RW with bbram reset flags set. */
+#define CONFIG_AFTER_G3_STATE_SYSJUMP_BBRAM_BUGFIX
+
 /* SOC */
 #define CONFIG_CHIPSET_SKYLAKE
 #define CONFIG_CHIPSET_HAS_PLATFORM_PMIC_RESET
