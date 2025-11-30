@@ -48,6 +48,8 @@ static struct option long_opts[] = {
 
 const char help_str[] =
 	"Commands:\n"
+	"  afterg3state [off|on|previous]\n"
+	"      Get or set After G3 State value\n"
 	"  apreset\n"
 	"      Issue AP reset\n"
 	"  autofanctrl <on>\n"
@@ -1220,6 +1222,73 @@ int cmd_rwsig_action(int argc, char *argv[])
 int cmd_apreset(int argc, char *argv[])
 {
 	return ec_command(EC_CMD_AP_RESET, 0, NULL, 0, NULL, 0);
+}
+
+/* Order should match enum ec_after_g3_state, starting from value 0. */
+static const char *ag3s_name_table[] = { "off", "on", "previous" };
+
+static inline const char *ag3s_get_state_name(enum ec_after_g3_state state)
+{
+	return ((state >= EC_AFTER_G3_STATE_OFF &&
+		 state <= EC_AFTER_G3_STATE_PREVIOUS) ?
+		ag3s_name_table[state] : NULL);
+}
+
+static enum ec_after_g3_state ag3s_find_state_by_name(const char *name)
+{
+	int i, len;
+	for (i = 0, len = ARRAY_SIZE(ag3s_name_table); i < len; ++i) {
+		if (!strcasecmp(name, ag3s_name_table[i]))
+			return i;
+	}
+	return EC_AFTER_G3_STATE_UNKNOWN;
+}
+
+int cmd_after_g3_state(int argc, char *argv[])
+{
+	static const char *ag3s_title = "After G3 State";
+
+	enum ec_after_g3_state state;
+	const char *state_name;
+	int rv;
+
+	if (argc < 2) {
+		struct ec_response_after_g3_state_get r;
+
+		rv = ec_command(EC_CMD_AFTER_G3_STATE_GET, 0, NULL, 0, &r,
+				sizeof(r));
+		if (rv < 0)
+			return -1;
+
+		state = r.state;
+	} else if (argc == 2) {
+		struct ec_params_after_g3_state_set p;
+
+		state = ag3s_find_state_by_name(argv[1]);
+		if (state == EC_AFTER_G3_STATE_UNKNOWN) {
+			fprintf(stderr, "%s: Invalid state '%s'\n", ag3s_title,
+				argv[1]);
+			return -1;
+		}
+
+		p.state = (int8_t)state;
+
+		rv = ec_command(EC_CMD_AFTER_G3_STATE_SET, 0, &p, sizeof(p),
+				NULL, 0);
+		if (rv < 0)
+			return -1;
+	} else {
+		fprintf(stderr, "%s: Too many args\n", ag3s_title);
+		return -1;
+	}
+
+	state_name = ag3s_get_state_name(state);
+	if (!state_name)
+		return -1;
+
+	printf("%s: %s\n", ag3s_title, state_name);
+
+	return 0;
 }
 
 static void *fp_download_frame(struct ec_response_fp_info *info, int all)
@@ -8050,6 +8119,7 @@ int cmd_cec(int argc, char *argv[])
 
 /* NULL-terminated list of commands */
 const struct command commands[] = {
+	{"afterg3state", cmd_after_g3_state},
 	{"apreset", cmd_apreset},
 	{"autofanctrl", cmd_thermal_auto_fan_ctrl},
 	{"backlight", cmd_lcd_backlight},
