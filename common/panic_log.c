@@ -193,7 +193,7 @@ static int command_panic_log(int argc, char **argv)
 	} else if (argc == 2 && !strcasecmp(argv[1], "dump")) {
 		bool orig_frozen = panic_log_freeze(true);
 		char dump_buffer[16];
-		panic_printf("=== Panic Log Start ===\n");
+		ccprintf("=== Panic Log Start ===\n");
 		for (int i = 0; i < panic_log_len();) {
 			int j = 0;
 			for (; j < ARRAY_SIZE(dump_buffer) - 1 &&
@@ -201,17 +201,10 @@ static int command_panic_log(int argc, char **argv)
 			     j++, i++)
 				dump_buffer[j] = panic_log_read(i);
 			dump_buffer[j] = '\0';
-			/*
-			 * Using panic_printf to dump for two reasons:
-			 * 1) Avoid dumping panic log back into panic log, since
-			 * panic_printf does not go to panic log. 2) Avoid being
-			 * re-tokenized if CONFIG_PIGWEED_LOG_TOKENIZED_LIB is
-			 * enabled
-			 */
-			panic_printf("%s", dump_buffer);
+			ccprintf("%s", dump_buffer);
 		}
+		ccprintf("\n=== Panic Log End ===\n");
 		panic_log_freeze(orig_frozen);
-		panic_printf("\n=== Panic Log End ===\n");
 	} else if (argc == 2 && !strcasecmp(argv[1], "reset")) {
 		bool orig_frozen = panic_log_freeze(true);
 		panic_log_reset();
