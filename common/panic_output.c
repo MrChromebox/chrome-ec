@@ -10,6 +10,7 @@
 #include "hooks.h"
 #include "host_command.h"
 #include "panic.h"
+#include "panic_log.h"
 #include "printf.h"
 #include "software_panic.h"
 #include "sysjump.h"
@@ -64,6 +65,9 @@ int panic_sw_reason_is_valid(uint32_t reason)
 #ifndef CONFIG_DEBUG_PRINTF
 static int panic_txchar(void *context, int c)
 {
+	if (IS_ENABLED(CONFIG_PANIC_LOG))
+		panic_log_write_char(c);
+
 	if (c == '\n')
 		panic_txchar(context, '\r');
 
