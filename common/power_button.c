@@ -245,7 +245,7 @@ static const char *ag3s_title = "After G3 State";
 static enum ec_after_g3_state ag3s_state = AG3S_DEFAULT_STATE;
 
 /*
- * Order should match enum ec_after_g3_state, starting from value 1.
+ * Order should match enum ec_after_g3_state, starting from value 0.
  * Special values are excluded.
  */
 static const char *ag3s_name_table[] = { "off", "on", "previous" };
@@ -254,7 +254,7 @@ static inline const char *ag3s_get_state_name(enum ec_after_g3_state state)
 {
 	return ((state >= EC_AFTER_G3_STATE_OFF &&
 	         state <= EC_AFTER_G3_STATE_PREVIOUS) ?
-			ag3s_name_table[state - 1] : NULL);
+			ag3s_name_table[state] : NULL);
 }
 
 static enum ec_after_g3_state ag3s_find_state_by_name(const char *name)
@@ -262,7 +262,7 @@ static enum ec_after_g3_state ag3s_find_state_by_name(const char *name)
 	int i, len;
 	for (i = 0, len = ARRAY_SIZE(ag3s_name_table); i < len; ++i) {
 		if (!strcasecmp(name, ag3s_name_table[i]))
-			return i + 1;
+			return i;
 	}
 	return EC_AFTER_G3_STATE_UNKNOWN;
 }
