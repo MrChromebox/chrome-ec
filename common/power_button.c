@@ -407,7 +407,7 @@ static void ag3s_sync_on_hook(enum ag3s_sync_hook sync_hook)
 		ag3s_update_off_reset_flags(rfo_flags);
 		cflush();
 
-		/* Proper flag sync skipped due to the pending image jump. */
+		/* Proper flag sync skipped due to the pre-jump flag fix. */
 		return;
 	case AG3S_SYNC_HOOK_INIT_AFTER_PB_ISTATE:
 	case AG3S_SYNC_HOOK_CHIPSET_STARTUP:
