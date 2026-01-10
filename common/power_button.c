@@ -178,7 +178,7 @@ enum ag3s_reset_flags_op_flags {
 	AG3S_RFO_CLR_SYS  = (1 << 3)
 };
 
-/* Reset flags used to keep the device off when power is restored. */
+/* Reset flags used to keep the device off. */
 #define AG3S_RESET_FLAG_OFF      (RESET_FLAG_AP_OFF)
 #define AG3S_RESET_FLAG_OFF_NAME "AP_OFF"
 
