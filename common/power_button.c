@@ -443,7 +443,7 @@ static void ag3s_sync_on_hook(enum ag3s_sync_hook sync_hook)
 	/*
 	 * Sync OFF system reset flags to match the device state, otherwise
 	 * these flags can get carried via jump data to power button initial
-	 * state setup and cause issues after the jump...
+	 * state setup and cause issues after any potential future jump...
 	 */
 	 if (is_device_on) {
 		 /* The device is on, prevent abnormal state. */
@@ -514,7 +514,7 @@ static int command_after_g3_state(int argc, char **argv)
 }
 DECLARE_CONSOLE_COMMAND(afterg3state, command_after_g3_state,
 			"[off|on|previous]",
-			"Set or get After G3 State value");
+			"Get or set After G3 State value");
 
 #else /* !CONFIG_AFTER_G3_STATE */
 

@@ -49,7 +49,7 @@ static struct option long_opts[] = {
 const char help_str[] =
 	"Commands:\n"
 	"  afterg3state [off|on|previous]\n"
-	"      Set or get After G3 State value\n"
+	"      Get or set After G3 State value\n"
 	"  apreset\n"
 	"      Issue AP reset\n"
 	"  autofanctrl <on>\n"
