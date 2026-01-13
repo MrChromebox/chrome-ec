@@ -184,11 +184,11 @@ enum ag3s_reset_flags_op_flags {
 
 static void ag3s_update_off_reset_flags(int rfo_flags)
 {
-	static const char *op_set = "+";
-	static const char *op_clr = "-";
-	static const char *op_eq  = "=";
+	static const char op_set = '+';
+	static const char op_clr = '-';
+	static const char op_eq  = '=';
 
-	const char *op_bbram, *op_sys;
+	char op_bbram, op_sys;
 
 	if (!rfo_flags)
 		return;
@@ -216,7 +216,7 @@ static void ag3s_update_off_reset_flags(int rfo_flags)
 	}
 
 	CPRINTS("%s: " AG3S_RESET_FLAG_OFF_NAME " flag updated"
-	        " (%sbbram, %ssys)", ag3s_title, op_bbram, op_sys);
+	        " (%cbbram, %csys)", ag3s_title, op_bbram, op_sys);
 }
 
 static inline int ag3s_are_any_off_bbram_reset_flags_set(void)
