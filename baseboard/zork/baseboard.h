@@ -275,6 +275,8 @@
 
 /* Sensors */
 #define CONFIG_DYNAMIC_MOTION_SENSOR_COUNT
+/* Limit motion sensor frequency to 100 hz */
+#define CONFIG_EC_MAX_SENSOR_FREQ_MILLIHZ 100000
 
 /* Thermal */
 #define CONFIG_TEMP_SENSOR_SB_TSI
