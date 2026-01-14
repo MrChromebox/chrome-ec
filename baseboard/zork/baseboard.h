@@ -238,6 +238,10 @@
 #undef CONFIG_UART_TX_BUF_SIZE
 #define CONFIG_UART_TX_BUF_SIZE 4096
 
+/* Increase watchdog period to 3s to avoid false positives */
+#undef CONFIG_WATCHDOG_PERIOD_MS
+#define CONFIG_WATCHDOG_PERIOD_MS 3000
+
 #define I2C_PORT_TCPC0		NPCX_I2C_PORT0_0
 #define I2C_PORT_USBA0		NPCX_I2C_PORT0_0
 #define I2C_PORT_TCPC1		NPCX_I2C_PORT1_0
