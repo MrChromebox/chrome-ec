@@ -45,6 +45,13 @@ static void hang_detect_cancel(void)
 	hook_call_deferred(&hang_detect_reboot_data, -1);
 }
 
+static void hang_detect_reset(void)
+{
+	CPRINTS("Stop on Chipset reset");
+	hook_call_deferred(&hang_detect_reboot_data, -1);
+}
+DECLARE_HOOK(HOOK_CHIPSET_RESET, hang_detect_reset, HOOK_PRIO_DEFAULT);
+
 /*****************************************************************************/
 /* Host command */
 
