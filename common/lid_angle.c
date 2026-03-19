@@ -16,6 +16,10 @@
 #include "motion_lid.h"
 #include "motion_sense.h"
 
+#ifdef CONFIG_TABLET_MODE
+#include "tablet_mode.h"
+#endif
+
 /* Console output macros */
 #define CPUTS(outstr) cputs(CC_LIDANGLE, outstr)
 #define CPRINTS(format, args...) cprints(CC_LIDANGLE, format, ## args)
@@ -150,10 +154,17 @@ void lid_angle_update(int lid_ang)
 	}
 
 	/* Enable or disable peripherals as necessary. */
-	if (accept)
+	if (accept) {
 		lid_angle_peripheral_enable(1);
-	else if (ignore && !accept)
+#ifdef CONFIG_TABLET_MODE
+		tablet_set_mode(0);
+#endif
+	} else if (ignore && !accept) {
 		lid_angle_peripheral_enable(0);
+#ifdef CONFIG_TABLET_MODE
+		tablet_set_mode(1);
+#endif
+	}
 }
 
 static void enable_peripherals(void)

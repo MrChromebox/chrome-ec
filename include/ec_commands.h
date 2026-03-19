@@ -306,6 +306,16 @@
 #define EC_ACPI_MEM_CHARGING_LIMIT_DISABLED  0xff
 
 /*
+ * Report device orientation (device-mode indicator).
+ *
+ *   bit 0 device is tablet mode
+ */
+#define EC_ACPI_MEM_DEVICE_ORIENTATION 0x09
+#define EC_ACPI_MEM_DEVICE_TABLET_MODE 0x01
+#define EC_ACPI_MEM_TBMD_SHIFT 0
+#define EC_ACPI_MEM_TBMD_MASK 0x1
+
+/*
  * ACPI addresses 0x20 - 0xff map to EC_MEMMAP offset 0x00 - 0xdf.  This data
  * is read-only from the AP.  Added in EC_ACPI_MEM_VERSION 2.
  */
@@ -439,6 +449,17 @@ enum host_event_code {
 
 	/* Emulate MKBP event */
 	EC_HOST_EVENT_MKBP = 27,
+
+	/* EC desires to change state of host-controlled USB mux */
+	EC_HOST_EVENT_USB_MUX = 28,
+
+	/*
+	 * TABLET/LAPTOP mode event.
+	 *
+	 * After the AP observes this event (via SCI), it should query EC ACPI
+	 * EC memory for device orientation (TBMD).
+	 */
+	EC_HOST_EVENT_MODE_CHANGE = 29,
 
 	/*
 	 * The high bit of the event mask is not used as a host event code.  If
