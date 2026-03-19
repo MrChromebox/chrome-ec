@@ -45,7 +45,7 @@ def GetPayloadFromOffset(payload_file,offset):
     payload = bytearray(f.read())
   rem_len = len(payload) % 64
   if rem_len:
-    payload += '\0' * (64 - rem_len)
+    payload.extend(b'\0' * (64 - rem_len))
   return payload
 
 def GetPayload(payload_file):
@@ -54,8 +54,11 @@ def GetPayload(payload_file):
 
 def GetPublicKey(pem_file):
   """Extract public exponent and modulus from PEM file."""
-  s = subprocess.check_output(['openssl', 'rsa', '-in', pem_file,
-                               '-text', '-noout'])
+  s = subprocess.check_output(
+      ['openssl', 'rsa', '-in', pem_file, '-text', '-noout'])
+  if isinstance(s, bytes):
+    # openssl output is UTF-8 text; decode for Python 3 parsing.
+    s = s.decode('utf-8', errors='ignore')
   modulus_raw = []
   in_modulus = False
   for line in s.split('\n'):
@@ -68,8 +71,7 @@ def GetPublicKey(pem_file):
     if line.startswith('publicExponent'):
       exp = int(line.split(' ')[1], 10)
   modulus_raw.reverse()
-  modulus = bytearray(''.join(map(lambda x: chr(int(x, 16)),
-                                  modulus_raw[0:256])))
+  modulus = bytearray(int(x, 16) for x in modulus_raw[0:256])
   return struct.pack('<Q', exp), modulus
 
 def GetSpiClockParameter(args):
@@ -83,11 +85,11 @@ def GetSpiReadCmdParameter(args):
   return SPI_READ_CMD_LIST.index(args.spi_read_cmd)
 
 def PadZeroTo(data, size):
-  data.extend('\0' * (size - len(data)))
+  data.extend(b'\0' * (size - len(data)))
 
 def BuildHeader(args, payload_len, rorofile):
   # Identifier and header version
-  header = bytearray(['C', 'S', 'M', 'S', '\0'])
+  header = bytearray(b'CSMS\0')
 
   PadZeroTo(header, 0x6)
   header.append(GetSpiClockParameter(args))
@@ -122,7 +124,7 @@ def SignByteArray(data, pem_file):
   with open(sign_file, 'rb') as f:
     signed = list(f.read())
     signed.reverse()
-    return bytearray(''.join(signed))
+    return bytearray(signed)
 
 def BuildTag(args):
   tag = bytearray([(args.header_loc >> 8) & 0xff,
@@ -196,7 +198,7 @@ def parseargs():
 # Debug helper routine
 def dumpsects(spi_list):
   for s in spi_list:
-    print "%x %d %s\n"%(s[0],len(s[1]),s[2])
+    print("%x %d %s\n" % (s[0], len(s[1]), s[2]))
 
 def main():
   args = parseargs()
@@ -237,12 +239,12 @@ def main():
     for s in spi_list:
       assert addr <= s[0]
       if addr < s[0]:
-        f.write('\xff' * (s[0] - addr))
+        f.write(b'\xff' * (s[0] - addr))
         addr = s[0]
       f.write(s[1])
       addr += len(s[1])
     if addr < spi_size:
-      f.write('\xff' * (spi_size - addr))
+      f.write(b'\xff' * (spi_size - addr))
 
 if __name__ == '__main__':
   main()
