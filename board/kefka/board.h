@@ -94,6 +94,9 @@
 #define CONFIG_LID_ANGLE_UPDATE
 #define CONFIG_DYNAMIC_MOTION_SENSOR_COUNT
 
+/* Expose tablet mode (TBMD) to the host based on lid angle. */
+#define CONFIG_TABLET_MODE
+
 /* Wireless signals */
 #define WIRELESS_GPIO_WLAN	GPIO_WLAN_OFF_L
 
