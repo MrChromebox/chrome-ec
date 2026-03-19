@@ -63,6 +63,7 @@ common-$(CONFIG_LED_POLICY_STD)+=led_policy_std.o
 common-$(CONFIG_LID_ANGLE)+=motion_lid.o math_util.o
 common-$(CONFIG_LID_ANGLE_UPDATE)+=lid_angle.o
 common-$(CONFIG_LID_SWITCH)+=lid_switch.o
+common-$(CONFIG_TABLET_MODE)+=tablet_mode.o
 common-$(CONFIG_LPC)+=acpi.o port80.o
 common-$(CONFIG_MKBP_EVENT)+=mkbp_event.o
 common-$(CONFIG_ONEWIRE)+=onewire.o

@@ -15,6 +15,10 @@
 #include "timer.h"
 #include "util.h"
 
+#ifdef CONFIG_TABLET_MODE
+#include "tablet_mode.h"
+#endif
+
 /* Console output macros */
 #define CPUTS(outstr) cputs(CC_LPC, outstr)
 #define CPRINTF(format, args...) cprintf(CC_LPC, format, ## args)
@@ -161,6 +165,15 @@ int acpi_ap_to_ec(int is_cmd, uint8_t value, uint8_t *resultptr)
 				result /= EC_ACPI_MEM_CHARGING_LIMIT_STEP_MA;
 			else
 				result = EC_ACPI_MEM_CHARGING_LIMIT_DISABLED;
+			break;
+#endif
+#ifdef CONFIG_TABLET_MODE
+		case EC_ACPI_MEM_DEVICE_ORIENTATION:
+			/*
+			 * TBMD is bit 0: 1 = tablet mode, 0 = clamshell.
+			 */
+			result = (tablet_get_mode() << EC_ACPI_MEM_TBMD_SHIFT) &
+				 EC_ACPI_MEM_TBMD_MASK;
 			break;
 #endif
 		default:
