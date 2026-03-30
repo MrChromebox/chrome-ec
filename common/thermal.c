@@ -167,6 +167,11 @@ static void thermal_control(void)
 
 	if (temp_fan_configured) {
 #ifdef CONFIG_FANS
+ #ifdef HAS_TASK_CHIPSET
+		/* Only run active cooling when the AP is in S0. */
+		if (!chipset_in_state(CHIPSET_STATE_ON))
+			return;
+ #endif
 	/* TODO(crosbug.com/p/23797): For now, we just treat all fans the
 	 * same. It would be better if we could assign different thermal
 	 * profiles to each fan - in case one fan cools the CPU while another
