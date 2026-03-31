@@ -191,6 +191,13 @@
 #define RGB_GRID0_ROW 1
 
 #define CONFIG_PWM_KBLIGHT
+/*
+ * Initialize keyboard backlight selection (and board_kblight_init()) at EC
+ * startup, not only on AP S5->S3 transitions. This makes RGBKBD GET_CONFIG
+ * deterministic across warm reboots where the EC may not observe chipset
+ * startup.
+ */
+#define CONFIG_KBLIGHT_HOOK_INIT
 
 #ifndef __ASSEMBLER__
 
