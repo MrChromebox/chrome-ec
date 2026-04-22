@@ -41,8 +41,7 @@
 #define CONFIG_OCPC
 #define CONFIG_CHARGE_RAMP_HW
 #undef CONFIG_CHARGER_SINGLE_CHIP
-#undef CONFIG_USB_PD_TCPC_LPM_EXIT_DEBOUNCE
-#define CONFIG_USB_PD_TCPC_LPM_EXIT_DEBOUNCE (100 * MSEC)
+
 /*
  * b/147463641: The charger IC seems to overdraw ~4%, therefore we
  * reduce our target accordingly.
@@ -86,7 +85,7 @@
 #define CONFIG_USB_PD_PORT_MAX_COUNT 2
 #define CONFIG_USB_PD_TCPM_RAA489000
 #undef CONFIG_USB_PD_TCPC_LPM_EXIT_DEBOUNCE
-#define CONFIG_USB_PD_TCPC_LPM_EXIT_DEBOUNCE (100 * MSEC)
+#define CONFIG_USB_PD_TCPC_LPM_EXIT_DEBOUNCE (150 * MSEC)
 #define CONFIG_USB_PD_COMM_LOCKED
 
 /* USB defines specific to external TCPCs */
