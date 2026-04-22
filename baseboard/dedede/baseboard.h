@@ -49,9 +49,6 @@
 
 #define CONFIG_ADC_VOLTAGE_COMPARATOR /* ITE ADC thresholds */
 
-#undef CONFIG_UART_TX_BUF_SIZE /* UART */
-#define CONFIG_UART_TX_BUF_SIZE 4096
-
 /*
  * Limit maximal ODR to 125Hz, the EC is using ~5ms per sample at
  * 48MHz core cpu clock.
@@ -60,6 +57,9 @@
 #else
 #error "Must define a VARIANT_[DEDEDE|KEEBY]_EC!"
 #endif
+
+#undef CONFIG_UART_TX_BUF_SIZE /* UART */
+#define CONFIG_UART_TX_BUF_SIZE 1024
 
 /*
  * The key difference between Keeby and Dedede is that Keeby variants don't have
