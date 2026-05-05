@@ -1,13 +1,10 @@
-/* Copyright 2022 The ChromiumOS Authors
+/* Copyright 2026 The ChromiumOS Authors
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
 
 /*
  * SVDM identity support for DFP-only devices.
- *
- * This file is only supported for Zephyr builds, enabled by
- * CONFIG_SVDM_RSP_DFP_ONLY. No equivalent config exists for EC-OS.
  */
 
 #include "usb_pd.h"
