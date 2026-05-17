@@ -364,7 +364,7 @@ const struct fan_conf fan_conf_0 = {
 
 const struct fan_rpm fan_rpm_0 = {
 	.rpm_min = 1900,
-	.rpm_start = 2400,
+	.rpm_start = 1900,
 	.rpm_max = 4300,
 };
 
@@ -382,6 +382,8 @@ BUILD_ASSERT(ARRAY_SIZE(mft_channels) == MFT_CH_COUNT);
 
 /******************************************************************************/
 /* Thermal control; drive fan based on temperature sensors. */
+static const int temp_fan_off = C_TO_K(41);
+static const int temp_fan_max = C_TO_K(72);
 const static struct ec_thermal_config thermal_a = {
 	.temp_host = {
 		[EC_TEMP_THRESH_WARN] = 0,
@@ -393,8 +395,8 @@ const static struct ec_thermal_config thermal_a = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(58),
 		[EC_TEMP_THRESH_HALT] = 0,
 	},
-	.temp_fan_off = C_TO_K(41),
-	.temp_fan_max = C_TO_K(72),
+	.temp_fan_off = temp_fan_off,
+	.temp_fan_max = temp_fan_max,
 };
 
 const static struct ec_thermal_config thermal_b = {
@@ -414,6 +416,36 @@ struct ec_thermal_config thermal_params[] = {
 	[TEMP_SENSOR_CORE] = thermal_a,
 };
 BUILD_ASSERT(ARRAY_SIZE(thermal_params) == TEMP_SENSOR_COUNT);
+
+static const struct fan_step_1_1 fan_table0[] = {
+	{ .decreasing_temp_ratio_threshold = TEMP_TO_RATIO(41),
+	  .increasing_temp_ratio_threshold = TEMP_TO_RATIO(45),
+	  .rpm = 1900 },
+	{ .decreasing_temp_ratio_threshold = TEMP_TO_RATIO(44),
+	  .increasing_temp_ratio_threshold = TEMP_TO_RATIO(48),
+	  .rpm = 2200 },
+	{ .decreasing_temp_ratio_threshold = TEMP_TO_RATIO(47),
+	  .increasing_temp_ratio_threshold = TEMP_TO_RATIO(52),
+	  .rpm = 2500 },
+	{ .decreasing_temp_ratio_threshold = TEMP_TO_RATIO(51),
+	  .increasing_temp_ratio_threshold = TEMP_TO_RATIO(57),
+	  .rpm = 2800 },
+	{ .decreasing_temp_ratio_threshold = TEMP_TO_RATIO(56),
+	  .increasing_temp_ratio_threshold = TEMP_TO_RATIO(63),
+	  .rpm = 3500 },
+	{ .decreasing_temp_ratio_threshold = TEMP_TO_RATIO(62),
+	  .increasing_temp_ratio_threshold = TEMP_TO_RATIO(72),
+	  .rpm = 4300 },
+};
+#define NUM_FAN_LEVELS ARRAY_SIZE(fan_table0)
+
+static const struct fan_step_1_1 *fan_table = fan_table0;
+
+int fan_percent_to_rpm(int fan_index, int temp_ratio)
+{
+	return temp_ratio_to_rpm_hysteresis(fan_table, NUM_FAN_LEVELS,
+					    fan_index, temp_ratio, NULL);
+}
 
 /* Power sensors */
 const struct ina3221_t ina3221[] = {
