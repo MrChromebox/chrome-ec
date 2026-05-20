@@ -32,9 +32,9 @@
 #define CONFIG_PANIC_LOG
 #endif
 
-/* Increase watchdog timeout since system will panic on warning */
+/* Increase watchdog timeout to avoid false positives under heavy load */
 #undef CONFIG_WATCHDOG_PERIOD_MS
-#define CONFIG_WATCHDOG_PERIOD_MS 2100
+#define CONFIG_WATCHDOG_PERIOD_MS 3100
 
 /* EC Defines */
 #define CONFIG_LTO
