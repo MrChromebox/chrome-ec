@@ -147,6 +147,13 @@ enum s0ix_notify_type {
 /* Flag to notify listeners about S0ix suspend/resume events. */
 enum s0ix_notify_type s0ix_notify = S0IX_NOTIFY_NONE;
 
+/*
+ * True after SLP_S0# is seen asserted in POWER_S0ix. Avoids exiting S0ix on
+ * SLP_S0/SLP_S3 deassert before hardware package-idle when the host
+ * sleep event arrives first.
+ */
+static int s0ix_slp_s0_asserted;
+
 static void s0ix_transition(int check_state, int hook_id)
 {
 	if (s0ix_notify != check_state)
@@ -242,8 +249,8 @@ enum power_state common_intel_x86_power_handle_state(enum power_state state)
 		 * the host sleep state.
 		 */
 		} else if (power_get_host_sleep_state()
-					== HOST_SLEEP_EVENT_S0IX_SUSPEND &&
-				chipset_get_sleep_signal(SYS_SLEEP_S0IX) == 0) {
+				== HOST_SLEEP_EVENT_S0IX_SUSPEND) {
+			CPRINTS("power state: S0 -> S0ix");
 			return POWER_S0S0ix;
 		} else {
 			s0ix_transition(S0IX_NOTIFY_RESUME,
@@ -255,9 +262,22 @@ enum power_state common_intel_x86_power_handle_state(enum power_state state)
 
 #ifdef CONFIG_POWER_S0IX
 	case POWER_S0ix:
-		/* System in S0 only if SLP_S0 and SLP_S3 are de-asserted */
+		if (power_get_host_sleep_state()
+				== HOST_SLEEP_EVENT_S0IX_RESUME) {
+			CPRINTS("power state: S0ix -> S0 (host resume)");
+			return POWER_S0ixS0;
+		}
+
+		if (!s0ix_slp_s0_asserted) {
+			if (chipset_get_sleep_signal(SYS_SLEEP_S0IX) == 0)
+				s0ix_slp_s0_asserted = 1;
+			break;
+		}
+
+		/* Hardware exit: SLP_S0# and SLP_S3# de-asserted */
 		if ((chipset_get_sleep_signal(SYS_SLEEP_S0IX) == 1) &&
-		   (chipset_get_sleep_signal(SYS_SLEEP_S3) == 1)) {
+		    (chipset_get_sleep_signal(SYS_SLEEP_S3) == 1)) {
+			CPRINTS("power state: S0ix -> S0");
 			return POWER_S0ixS0;
 		} else if (!power_has_signals(IN_PGOOD_ALL_CORE)) {
 			return POWER_S0;
@@ -392,6 +412,8 @@ enum power_state common_intel_x86_power_handle_state(enum power_state state)
 		 * Call hooks only if we haven't notified listeners of S0ix
 		 * suspend.
 		 */
+		s0ix_slp_s0_asserted =
+			(chipset_get_sleep_signal(SYS_SLEEP_S0IX) == 0);
 		s0ix_transition(S0IX_NOTIFY_SUSPEND, HOOK_CHIPSET_SUSPEND);
 
 		/*
@@ -402,6 +424,7 @@ enum power_state common_intel_x86_power_handle_state(enum power_state state)
 		return POWER_S0ix;
 
 	case POWER_S0ixS0:
+		s0ix_slp_s0_asserted = 0;
 		/*
 		 * Disable idle task deep sleep. This means that the low
 		 * power idle task will not go into deep sleep while in S0.
@@ -484,6 +507,7 @@ void power_chipset_handle_host_sleep_event(enum host_sleep_event state)
 
 #ifdef CONFIG_POWER_S0IX
 	if (state == HOST_SLEEP_EVENT_S0IX_SUSPEND) {
+		CPRINTS("host sleep event: S0ix suspend");
 		/*
 		 * Indicate to power state machine that a new host event for
 		 * s0ix suspend has been received and so chipset suspend
@@ -491,7 +515,9 @@ void power_chipset_handle_host_sleep_event(enum host_sleep_event state)
 		 */
 		s0ix_notify = S0IX_NOTIFY_SUSPEND;
 		power_signal_enable_interrupt(sleep_sig[SYS_SLEEP_S0IX]);
+		task_wake(TASK_ID_CHIPSET);
 	} else if (state == HOST_SLEEP_EVENT_S0IX_RESUME) {
+		CPRINTS("host sleep event: S0ix resume");
 		/*
 		 * Wake up chipset task and indicate to power state machine that
 		 * listeners need to be notified of chipset resume.
