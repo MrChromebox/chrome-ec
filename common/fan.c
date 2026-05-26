@@ -619,10 +619,8 @@ static void pwm_fan_resume(void)
 {
 	int fan;
 	for (fan = 0; fan < fan_count; fan++) {
-		/* We don't enable or disable thermal control here.
-		 * It should be already enabled by pwm_fan_init on cold boot
-		 * or by pwm_fan_S3_S5 on warm reboot. If it needs
-		 * to be disabled, DPTF and host command will do so. */
+		/* Restore automatic thermal fan control */
+		set_thermal_control_enabled(fan, 1);
 		fan_set_rpm_target(FAN_CH(fan),
 				   fan_percent_to_rpm(FAN_CH(fan),
 						      CONFIG_FAN_INIT_SPEED));
