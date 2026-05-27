@@ -16,7 +16,7 @@
 #include "watchdog.h"
 
 /* Panic data goes at the end of RAM. */
-static struct panic_data * const pdata_ptr = PANIC_DATA_PTR;
+static struct panic_data *const pdata_ptr = PANIC_DATA_PTR;
 /* Enter critical period or not. */
 static int wdt_warning_fired;
 
@@ -27,9 +27,9 @@ static int wdt_warning_fired;
  */
 
 /* Magic value to tickle the watchdog register. */
-#define ITE83XX_WATCHDOG_MAGIC_WORD  0x5C
+#define ITE83XX_WATCHDOG_MAGIC_WORD 0x5C
 /* Start to print warning message. */
-#define ITE83XX_WATCHDOG_WARNING_MS  CONFIG_AUX_TIMER_PERIOD_MS
+#define ITE83XX_WATCHDOG_WARNING_MS CONFIG_AUX_TIMER_PERIOD_MS
 /* The interval to print warning message at critical period. */
 #define ITE83XX_WATCHDOG_CRITICAL_MS 30
 
@@ -60,7 +60,7 @@ void watchdog_warning_irq(void)
 	 * LP = PC+4 after a jump and link instruction (jal).
 	 */
 	panic_printf("Pre-WDT warning! IPC:%08x LP:%08x TASK_ID:%d\n",
-		get_ipc(), ilp, task_get_current());
+		     get_ipc(), ilp, task_get_current());
 
 	if (!wdt_warning_fired++)
 		/*
@@ -85,6 +85,7 @@ void watchdog_reload(void)
 	}
 }
 DECLARE_HOOK(HOOK_TICK, watchdog_reload, HOOK_PRIO_DEFAULT);
+DECLARE_HOOK(HOOK_SYSJUMP, watchdog_reload, HOOK_PRIO_LAST);
 
 int watchdog_init(void)
 {
