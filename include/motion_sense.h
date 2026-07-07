@@ -19,7 +19,8 @@
 enum sensor_state {
 	SENSOR_NOT_INITIALIZED = 0,
 	SENSOR_INITIALIZED = 1,
-	SENSOR_INIT_ERROR = 2
+	SENSOR_INIT_ERROR = 2,
+	SENSOR_READY = 3
 };
 
 enum sensor_config {
