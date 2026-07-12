@@ -553,11 +553,13 @@ const int usb_port_enable[USB_PORT_COUNT] = {
 static void board_tcpc_init(void)
 {
 	/*
-	 * Reset TCPC if we have had a system reset.
-	 * With EFSv2, it is possible to be in RW without
-	 * having reset the TCPC.
+	 * Reset TCPC unless we jumped to this image late (tasks already
+	 * running). With EFSv2 / EC software sync it is possible to be in RW
+	 * without EC_RESET_FLAG_POWER_ON, and skipping the TCPC reset leaves
+	 * the ANX7447 in a stale state so USB-C PD never comes up (BJ still
+	 * works). Match the common board pattern: reset unless jumped late.
 	 */
-	if (system_get_reset_flags() & EC_RESET_FLAG_POWER_ON)
+	if (!system_jumped_late())
 		board_reset_pd_mcu();
 	/* Enable TCPC interrupts. */
 	gpio_enable_interrupt(GPIO_USB_C0_TCPPC_INT_ODL);
