@@ -200,7 +200,7 @@ static void board_init(void)
 	spi_enable(CONFIG_SPI_TOUCHPAD_PORT, 0);
 
 	/* Disable SPI passthrough when the system is locked */
-	usb_spi_enable(&usb_spi, system_is_locked());
+	usb_spi_enable(&usb_spi, !system_is_locked());
 
 	/* Set all four SPI pins to high speed */
 	/* pins B3/5, A15 */
