@@ -4340,9 +4340,6 @@ struct __ec_align2 ec_response_pd_chip_info {
 	};
 };
 
-	};
-};
-
 /* Run RW signature verification and get status */
 #define EC_CMD_RWSIG_CHECK_STATUS	0x011C
 

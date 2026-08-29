@@ -773,8 +773,6 @@ static void i8042_handle_from_host(void)
 	}
 }
 
-}
-
 void keyboard_protocol_task(void *u)
 {
 	int wait = -1;
