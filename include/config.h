@@ -274,6 +274,21 @@
 #undef CONFIG_BATTERY_VALIDATE_STRINGS
 
 /*
+ * If remaining capacity is x% of full capacity, remaining capacity is set
+ * equal to full capacity.
+ *
+ * Some batteries don't update full capacity timely or don't update it at all.
+ * On such systems, compensation is required to guarantee remaining_capacity
+ * will be equal to full_capacity eventually. This used to be done in ACPI.
+ *
+ * This number should match those used by powerd to evenly scale battery
+ * reading from 0 to 100%. These are default values, which are effective until
+ * the host boots.
+ */
+#define CONFIG_BATT_FULL_FACTOR			98
+#define CONFIG_BATT_HOST_SHUTDOWN_PERCENTAGE	4
+
+/*
  * Define the battery level near full
  */
 #define CONFIG_BATTERY_LEVEL_NEAR_FULL 97
