@@ -46,7 +46,7 @@ PROTOC?=protoc
 
 C_WARN = -Wstrict-prototypes -Wdeclaration-after-statement -Wno-pointer-sign
 COMMON_WARN = -Wall -Wundef -Werror -Werror-implicit-function-declaration \
-	-Wno-trigraphs -Wno-format-security -Wno-address-of-packed-member \
+	-Wno-trigraphs -Wno-format-security \
 	-fno-common -fno-strict-aliasing -fno-strict-overflow
 
 UBSAN_FLAGS=-fsanitize=array-bounds,vla-bound \

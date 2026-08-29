@@ -119,8 +119,8 @@ BUILD_ASSERT(ARRAY_SIZE(temp_sensors) == TEMP_SENSOR_COUNT);
  * Thermal limits for each temp sensor.  All temps are in degrees K.  Must be in
  * same order as enum temp_sensor_id.  To always ignore any temp, use 0.
  */
-static const int temp_fan_off = C_TO_K(0);
-static const int temp_fan_max = C_TO_K(56);
+#define temp_fan_off C_TO_K(0)
+#define temp_fan_max C_TO_K(56)
 struct ec_thermal_config thermal_params[] = {
 	/* {Twarn, Thigh, Thalt}, <on>
 	 * {Twarn, Thigh, X    }, <off>
