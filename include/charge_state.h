@@ -92,6 +92,11 @@ uint32_t charge_get_flags(void);
 int charge_get_percent(void);
 
 /**
+ * Return current display charge in 10ths of a percent (e.g. 1000 = 100.0%)
+ */
+int charge_get_display_charge(void);
+
+/**
  * Return non-zero if discharging and battery so low we should shut down.
  */
 int charge_want_shutdown(void);
