@@ -30,6 +30,11 @@ enum charge_state_v2 {
 	NUM_STATES_V2
 };
 
+struct sustain_soc {
+	int8_t lower;
+	int8_t upper;
+};
+
 struct charge_state_data {
 	timestamp_t ts;
 	int ac;
