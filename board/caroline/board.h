@@ -16,9 +16,9 @@
 #undef CONFIG_HOSTCMD_DEBUG_MODE
 #define CONFIG_HOSTCMD_DEBUG_MODE HCDEBUG_OFF
 
-/* Reduce shared memory space for FIFO */
+/* Reduce shared memory space for FIFO (Vivaldi + sensors leave ~480B free) */
 #undef CONFIG_SHARED_MEM_MIN_SIZE
-#define CONFIG_SHARED_MEM_MIN_SIZE 512
+#define CONFIG_SHARED_MEM_MIN_SIZE 256
 
 /* Optional features */
 #define CONFIG_ADC
