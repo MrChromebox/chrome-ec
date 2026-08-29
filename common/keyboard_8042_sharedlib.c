@@ -13,10 +13,7 @@
 #include "util.h"
 
 /* The standard Chrome OS keyboard matrix table in scan code set 2. */
-#ifndef CONFIG_KEYBOARD_SCANCODE_MUTABLE
-SHAREDLIB(const
-#endif
-uint16_t scancode_set2[KEYBOARD_COLS_MAX][KEYBOARD_ROWS] = {
+static uint16_t scancode_set2[KEYBOARD_COLS_MAX][KEYBOARD_ROWS] = {
 	{0x0000, 0x0000, 0x0014, 0xe01f, 0xe014, 0xe007, 0x0000, 0x0000},
 	{0xe01f, 0x0076, 0x000d, 0x000e, 0x001c, 0x001a, 0x0016, 0x0015},
 	{0x0005, 0x000c, 0x0004, 0x0006, 0x0023, 0x0021, 0x0026, 0x0024},
@@ -37,11 +34,20 @@ uint16_t scancode_set2[KEYBOARD_COLS_MAX][KEYBOARD_ROWS] = {
 	{0xe04a, 0x007c, 0x007b, 0x0074, 0x0071, 0x0073, 0x006b, 0x0070},
 	{0x006c, 0x0075, 0x007d, 0x0079, 0x007a, 0x0072, 0x0069, 0xe05a},
 #endif
+};
+
+uint16_t get_scancode_set2(uint8_t row, uint8_t col)
+{
+	if (col < KEYBOARD_COLS_MAX && row < KEYBOARD_ROWS)
+		return scancode_set2[col][row];
+	return 0;
 }
-#ifndef CONFIG_KEYBOARD_SCANCODE_MUTABLE
-)
-#endif
-;
+
+void set_scancode_set2(uint8_t row, uint8_t col, uint16_t val)
+{
+	if (col < KEYBOARD_COLS_MAX && row < KEYBOARD_ROWS)
+		scancode_set2[col][row] = val;
+}
 
 /*
  * The translation table from scan code set 2 to set 1.

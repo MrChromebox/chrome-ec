@@ -9,6 +9,7 @@
 #define __CROS_EC_KEYBOARD_SCAN_H
 
 #include "common.h"
+#include "compile_time_macros.h"
 #include "keyboard_config.h"
 
 struct keyboard_scan_config {
@@ -116,5 +117,7 @@ static inline void keyboard_scan_enable(int enable,
  */
 void keyboard_suppress_noise(void);
 #endif
+
+void set_vol_up_key(uint8_t row, uint8_t col);
 
 #endif  /* __CROS_EC_KEYBOARD_SCAN_H */
