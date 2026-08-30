@@ -27,6 +27,7 @@
 #include "driver/temp_sensor/bd99992gw.h"
 #include "extpower.h"
 #include "gesture.h"
+#include "ec_commands.h"
 #include "gpio.h"
 #include "hooks.h"
 #include "host_command.h"
@@ -177,6 +178,29 @@ struct keyboard_scan_config keyscan_config = {
 		0xa4, 0xff, 0xfe, 0x55, 0xfa, 0xca  /* full set */
 	},
 };
+
+static const struct ec_response_keybd_config eve_kb = {
+	.num_top_row_keys = 10,
+	.action_keys = {
+		TK_BACK,		/* T1 / F1 - previous page */
+		TK_REFRESH,		/* T2 / F2 - refresh */
+		TK_FULLSCREEN,		/* T3 / F3 - immersive fullscreen */
+		TK_OVERVIEW,		/* T4 / F4 - overview */
+		TK_BRIGHTNESS_DOWN,	/* T5 / F5 - dim */
+		TK_BRIGHTNESS_UP,	/* T6 / F6 - bright */
+		TK_PLAY_PAUSE,		/* T7 / F7 - play/pause */
+		TK_VOL_MUTE,		/* T8 / F8 - mute */
+		TK_VOL_DOWN,		/* T9 / F9 - volume down */
+		TK_VOL_UP,		/* T10 / F10 - volume up */
+	},
+	.capabilities = KEYBD_CAP_SCRNLOCK_KEY,
+};
+
+__override const struct ec_response_keybd_config *
+board_vivaldi_keybd_config(void)
+{
+	return &eve_kb;
+}
 
 /* PWM channels. Must be in the exactly same order as in enum pwm_channel. */
 const struct pwm_t pwm_channels[] = {
