@@ -17,6 +17,7 @@
 
 /* Keyboard matrix is 13 output columns x 8 input rows */
 #define KEYBOARD_COLS 13
+#define KEYBOARD_COLS_MAX KEYBOARD_COLS
 #define KEYBOARD_ROWS 8
 
 #define KEYBOARD_ROW_TO_MASK(r) (1 << (r))
