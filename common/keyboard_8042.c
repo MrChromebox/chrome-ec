@@ -309,7 +309,7 @@ static enum ec_error_list matrix_callback(int8_t row, int8_t col,
 	if (row >= KEYBOARD_ROWS || col >= keyboard_cols)
 		return EC_ERROR_INVAL;
 
-	make_code = scancode_set2[col][row];
+	make_code = get_scancode_set2(row, col);
 
 #ifdef CONFIG_KEYBOARD_SCANCODE_CALLBACK
 	{
