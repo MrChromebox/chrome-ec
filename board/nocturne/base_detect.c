@@ -23,6 +23,7 @@
 #include "console.h"
 #include "gpio.h"
 #include "hooks.h"
+#include "tablet_mode.h"
 #include "timer.h"
 #include "util.h"
 
@@ -120,16 +121,25 @@ static void base_power_enable(int enable)
 	CPRINTS("BP: %d", enable);
 }
 
+/*
+ * On base status change:
+ * 1. Update base attached switch (CBAS / MKBP BASE_ATTACHED).
+ * 2. Update tablet mode for host ACPI TBMD / VBTN: detached => tablet,
+ *    attached => clamshell (same assumption as poppy/cheza).
+ * 3. Enable or disable base power.
+ */
 static void base_detect_changed(void)
 {
 	switch (state) {
 	case BASE_DETACHED:
 		base_set_state(0);
+		tablet_set_mode(1);
 		base_power_enable(0);
 		break;
 
 	case BASE_ATTACHED:
 		base_set_state(1);
+		tablet_set_mode(0);
 		base_power_enable(1);
 		break;
 

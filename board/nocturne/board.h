@@ -65,6 +65,13 @@
 #define CONFIG_BASE_ATTACHED_SWITCH
 #define CONFIG_BUTTON_TRIGGERED_RECOVERY
 #define CONFIG_VOLUME_BUTTONS
+/*
+ * Drive TBMD / VBTN from base attach state (detached == tablet), matching
+ * poppy/cheza. Keeps CBAS (BASE_ATTACHED) for ChromeOS and feeds ACPI tablet
+ * mode for non-ChromeOS.
+ */
+#define CONFIG_TABLET_MODE
+#define CONFIG_TABLET_MODE_SWITCH
 
 /* Charger */
 #define CONFIG_CHARGE_MANAGER
