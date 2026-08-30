@@ -327,7 +327,7 @@ static enum ec_error_list matrix_callback(int8_t row, int8_t col,
 		break;
 
 	case SCANCODE_SET_2:
-		make_code = scancode_set2[row][col];
+		make_code = get_scancode_set2(row, col);
 		break;
 
 	default:

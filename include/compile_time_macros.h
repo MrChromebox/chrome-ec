@@ -27,6 +27,14 @@
 #define offsetof(type, member)  __builtin_offsetof(type, member)
 #endif
 
+#define member_size(type, member) sizeof(((type *)0)->member)
+
+/*
+ * Bit operation macros.
+ */
+#define BIT(nr)			(1UL << (nr))
+#define BIT_ULL(nr)		(1ULL << (nr))
+
 #define __visible	__attribute__((externally_visible))
 
 #endif /* __CROS_EC_COMPILE_TIME_MACROS_H */
