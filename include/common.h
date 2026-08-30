@@ -187,6 +187,10 @@ enum ec_error_list {
 #define test_export_static static
 #endif
 
+#define __override_proto
+#define __override
+#define __overridable	__attribute__((weak))
+
 /* find the most significant bit. Not defined in n == 0. */
 #define __fls(n) (31 - __builtin_clz(n))
 

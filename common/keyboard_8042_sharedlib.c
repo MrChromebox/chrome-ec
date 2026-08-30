@@ -67,6 +67,19 @@ SHAREDLIB(uint16_t const scancode_set2[KEYBOARD_ROWS][KEYBOARD_COLS] = {
 });
 #endif
 
+uint16_t get_scancode_set2(uint8_t row, uint8_t col)
+{
+	if (col < KEYBOARD_COLS && row < KEYBOARD_ROWS)
+		return scancode_set2[row][col];
+	return 0;
+}
+
+void set_scancode_set2(uint8_t row, uint8_t col, uint16_t val)
+{
+	if (col < KEYBOARD_COLS && row < KEYBOARD_ROWS)
+		scancode_set2[row][col] = val;
+}
+
 /*
  * Button scancodes.
  * Must be in the same order as defined in keyboard_button_type.
