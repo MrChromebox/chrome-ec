@@ -9,6 +9,7 @@
 #define __CROS_EC_KEYBOARD_SCAN_H
 
 #include "common.h"
+#include "compile_time_macros.h"
 #include "keyboard_config.h"
 
 struct keyboard_scan_config {
@@ -45,15 +46,15 @@ struct keyboard_scan_config *keyboard_scan_get_config(void);
 /*
  * Which is probably this.
  */
-extern struct keyboard_scan_config keyscan_config;
+__override_proto extern struct keyboard_scan_config keyscan_config;
 
 /* Key held down at keyboard-controlled reset boot time. */
 enum boot_key {
 	/* No keys other than keyboard-controlled reset keys */
 	BOOT_KEY_NONE = 0,
-	BOOT_KEY_ESC = (1 << 0),
-	BOOT_KEY_DOWN_ARROW = (1 << 1),
-	BOOT_KEY_LEFT_SHIFT = (1 << 2),
+	BOOT_KEY_ESC = BIT(0),
+	BOOT_KEY_DOWN_ARROW = BIT(1),
+	BOOT_KEY_LEFT_SHIFT = BIT(2),
 };
 
 #if defined(HAS_TASK_KEYSCAN) && defined(CONFIG_KEYBOARD_BOOT_KEYS)
@@ -126,6 +127,12 @@ void keyboard_suppress_noise(void);
  * the number of bits actually used is the supported keyboard layout.
  */
 int keyboard_get_keyboard_id(void);
+#endif
+
+#ifdef CONFIG_KEYBOARD_RUNTIME_KEYS
+void set_vol_up_key(uint8_t row, uint8_t col);
+#else
+static inline void set_vol_up_key(uint8_t row, uint8_t col) {}
 #endif
 
 #endif  /* __CROS_EC_KEYBOARD_SCAN_H */
