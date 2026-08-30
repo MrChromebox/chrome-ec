@@ -30,6 +30,8 @@
 #define CONFIG_I2C_MASTER
 #define CONFIG_KEYBOARD_COL2_INVERTED
 #define CONFIG_KEYBOARD_PROTOCOL_8042
+#define CONFIG_KEYBOARD_SCANCODE_MUTABLE
+#define CONFIG_KEYBOARD_VIVALDI
 #define CONFIG_LED_COMMON
 #define CONFIG_LID_SWITCH
 #define CONFIG_LOW_POWER_IDLE
@@ -137,8 +139,9 @@
 /* Lower maximal ODR to 100Hz */
 #define CONFIG_EC_MAX_SENSOR_FREQ_MILLIHZ 100000
 
-/* FIFO size is in power of 2. */
-#define CONFIG_ACCEL_FIFO 512
+/* FIFO size is in power of 2. Reduced from 512 for Vivaldi RW RAM budget. */
+#undef CONFIG_ACCEL_FIFO
+#define CONFIG_ACCEL_FIFO 256
 
 /* Depends on how fast the AP boots and typical ODRs */
 #define CONFIG_ACCEL_FIFO_THRES (CONFIG_ACCEL_FIFO / 3)
