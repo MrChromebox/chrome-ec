@@ -43,6 +43,19 @@ uint16_t scancode_set2[KEYBOARD_COLS_MAX][KEYBOARD_ROWS] = {
 #endif
 ;
 
+uint16_t get_scancode_set2(uint8_t row, uint8_t col)
+{
+	if (col < KEYBOARD_COLS_MAX && row < KEYBOARD_ROWS)
+		return scancode_set2[col][row];
+	return 0;
+}
+
+void set_scancode_set2(uint8_t row, uint8_t col, uint16_t val)
+{
+	if (col < KEYBOARD_COLS_MAX && row < KEYBOARD_ROWS)
+		scancode_set2[col][row] = val;
+}
+
 /*
  * The translation table from scan code set 2 to set 1.
  * Ref: http://kbd-project.org/docs/scancodes/scancodes-10.html#ss10.3
