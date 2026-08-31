@@ -42,6 +42,10 @@ uint16_t get_scancode_set2(uint8_t row, uint8_t col);
  **/
 void set_scancode_set2(uint8_t row, uint8_t col, uint16_t val);
 
+/* Translation from scan code set 2 to set 1. */
+extern const uint8_t scancode_translate_table[];
+extern uint8_t scancode_translate_set2_to_1(uint8_t code);
+
 /* Button scancodes (Power, Volume Down, Volume Up, etc.) */
 extern const struct button_8042_t buttons_8042[KEYBOARD_BUTTON_COUNT];
 
