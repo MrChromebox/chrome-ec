@@ -30,17 +30,21 @@ extern const struct temp_sensor_t temp_sensors[TEMP_SENSOR_COUNT];
 static struct thermal_config_t thermal_config[TEMP_SENSOR_TYPE_COUNT] = {
 	/* TEMP_SENSOR_TYPE_CPU */
 	{THERMAL_CONFIG_WARNING_ON_FAIL,
-	 {373, 378, 383, 327, 335, 343, 351, 359} } ,
+	 {373, 378, 383,
+	  323, 328, 333, 338, 343, 348, 353} },
 	/* TEMP_SENSOR_TYPE_BOARD */
 	{THERMAL_CONFIG_NO_FLAG, {THERMAL_THRESHOLD_DISABLE_ALL} },
 	/* TEMP_SENSOR_TYPE_CASE */
 	{THERMAL_CONFIG_NO_FLAG, {THERMAL_THRESHOLD_DISABLE_ALL} },
 };
 
-/* Fan speed settings. */
-/* Real max RPM is about 9300. */
-static const int fan_speed[THERMAL_FAN_STEPS + 1] = {0, 3000, 4575, 6150,
-						     7725, -1};
+/*
+ * Fan speed settings. Real max RPM is about 9300; cap below that.
+ * Minimum 1200 RPM keeps the fan spinning under auto control (stall recovery).
+ */
+static const int fan_speed[THERMAL_FAN_STEPS + 1] = {
+	1200, 1600, 2000, 2500, 3000, 3500, 4500, 7000,
+};
 
 /* Number of consecutive overheated events for each temperature sensor. */
 static int8_t ot_count[TEMP_SENSOR_COUNT][THRESHOLD_COUNT + THERMAL_FAN_STEPS];
