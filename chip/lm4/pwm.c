@@ -363,14 +363,8 @@ static int pwm_init(void)
 		pwm_set_keyboard_backlight(prev->kblight_percent);
 	}
 	else {
-		/* Set initial fan speed to maximum, backlight off */
-		pwm_set_fan_target_rpm(-1);
+		/* Fan stays off until HOOK_CHIPSET_RESUME (S3->S0). */
 		pwm_set_keyboard_backlight(0);
-
-		/*
-		 * Enable keyboard backlight.  Fan will be enabled later by whatever
-		 * controls the fan power supply.
-		 */
 		pwm_enable_keyboard_backlight(1);
 	}
 
@@ -402,6 +396,7 @@ DECLARE_HOOK(HOOK_SYSJUMP, pwm_preserve_state, HOOK_PRIO_DEFAULT);
 static int pwm_resume(void)
 {
 	pwm_enable_fan(1);
+	pwm_set_rpm_mode(1);
 	return EC_SUCCESS;
 }
 DECLARE_HOOK(HOOK_CHIPSET_RESUME, pwm_resume, HOOK_PRIO_DEFAULT);
@@ -417,6 +412,8 @@ DECLARE_HOOK(HOOK_CHIPSET_SUSPEND, pwm_suspend, HOOK_PRIO_DEFAULT);
 
 static int pwm_shutdown(void)
 {
+	pwm_enable_fan(0);
+	pwm_set_fan_target_rpm(0);
 	pwm_set_keyboard_backlight(0);
 	return EC_SUCCESS;
 }
