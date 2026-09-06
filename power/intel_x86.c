@@ -276,7 +276,14 @@ enum power_state common_intel_x86_power_handle_state(enum power_state state)
 			return power_wait_s5_rtc_reset();
 #endif
 
-		if (chipset_get_sleep_signal(SYS_SLEEP_S5) == 1)
+		/*
+		 * SLP_S5# reads deasserted both when the AP wants to come up
+		 * and while the EC is walking a hibernated AP down from S4, so
+		 * the test below only means the former when the EC is not
+		 * itself driving that descent.
+		 */
+		if (!power_s4_exit_to_g3() &&
+		    chipset_get_sleep_signal(SYS_SLEEP_S5) == 1)
 			return POWER_S5S4; /* Power up to next state */
 		break;
 

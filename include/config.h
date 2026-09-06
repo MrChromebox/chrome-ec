@@ -1749,6 +1749,7 @@
 #undef CONFIG_CMD_RTC
 #undef CONFIG_CMD_RTC_ALARM
 #define CONFIG_CMD_RW
+#undef CONFIG_CMD_S4_TIMEOUT
 #undef CONFIG_CMD_S5_TIMEOUT
 #undef CONFIG_CMD_SCRATCHPAD
 #undef CONFIG_CMD_SEVEN_SEG_DISPLAY
@@ -3912,6 +3913,23 @@
 
 /* Advertise S4 residency */
 #undef CONFIG_POWER_S4_RESIDENCY
+
+/*
+ * Seconds to stay in S4 before dropping to S5, and from there down the normal
+ * path to G3.
+ *
+ * A hibernated AP holds SLP_S4# asserted and SLP_S5# deasserted for as long as
+ * it stays hibernated, which leaves the chipset handler no transition to act
+ * on. This timeout supplies one, so that HOOK_CHIPSET_SHUTDOWN, the rail
+ * teardown at S5 -> G3 and the CONFIG_HIBERNATE_DELAY_SEC timer all still run
+ * on a machine the user hibernated rather than shut down.
+ *
+ * The descent needs the chipset layer to leave the still-deasserted SLP_S5#
+ * alone; see power_s4_exit_to_g3() and the POWER_S4 case in power/common.c.
+ *
+ * Zero or negative holds the EC in S4 for as long as the AP stays there.
+ */
+#define CONFIG_S4_INACTIVITY_TIMEOUT 30
 
 /* Support detecting failure to enter a sleep state (S0ix/S3) */
 #undef CONFIG_POWER_SLEEP_FAILURE_DETECTION

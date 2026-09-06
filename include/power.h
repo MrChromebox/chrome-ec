@@ -211,6 +211,17 @@ enum power_state power_chipset_init(void);
 enum power_state power_handle_state(enum power_state state);
 
 /**
+ * True while the EC is walking a hibernated AP from S4 down to G3 on its own,
+ * the S4 inactivity timeout having expired (see
+ * CONFIG_S4_INACTIVITY_TIMEOUT).
+ *
+ * SLP_S5# stays deasserted across that descent, so chipset code must skip any
+ * "SLP_S5# deasserted means the AP wants to come up" test on entry to S5 while
+ * this returns true. Cleared as soon as the state machine is anywhere but S5.
+ */
+bool power_s4_exit_to_g3(void);
+
+/**
  * Interrupt handler for power signal GPIOs.
  */
 #ifdef CONFIG_AP_POWER_CONTROL

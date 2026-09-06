@@ -44,6 +44,24 @@ static int s5_inactivity_timeout = 10;
 static const int s5_inactivity_timeout = 10;
 #endif
 
+/* Timeout for dropping back from S4 to S5 in seconds */
+#ifdef CONFIG_CMD_S4_TIMEOUT
+static int s4_inactivity_timeout = CONFIG_S4_INACTIVITY_TIMEOUT;
+#else
+static const int s4_inactivity_timeout = CONFIG_S4_INACTIVITY_TIMEOUT;
+#endif
+
+/*
+ * Set while the S4 inactivity timeout is walking a hibernated AP down to G3.
+ * See power_s4_exit_to_g3() in power.h.
+ */
+static bool s4_exit_to_g3;
+
+bool power_s4_exit_to_g3(void)
+{
+	return s4_exit_to_g3;
+}
+
 static const char *const state_names[] = {
 	"G3",	    "S5",	"S4",	  "S3",	    "S0",
 #ifdef CONFIG_POWER_S0IX
@@ -434,6 +452,14 @@ board_system_is_idle(uint64_t last_shutdown_time, uint64_t *target,
  */
 static enum power_state power_common_state(void)
 {
+	/*
+	 * The forced S4 -> G3 exit only has to survive the trip through S5.
+	 * Clearing it anywhere else keeps a stuck flag from blocking a real
+	 * power-up, which would leave the machine unable to boot.
+	 */
+	if (state != POWER_S5)
+		s4_exit_to_g3 = false;
+
 	switch (state) {
 	case POWER_G3:
 		if (want_g3_exit || want_reboot_ap_at_g3) {
@@ -521,7 +547,42 @@ static enum power_state power_common_state(void)
 		break;
 
 	case POWER_S4:
-		__fallthrough;
+		power_wait_signals(0);
+
+		/*
+		 * A hibernated AP holds SLP_S4# asserted and SLP_S5#
+		 * deasserted for as long as it stays hibernated, which leaves
+		 * the chipset handler no transition to act on. The timeout
+		 * below is what takes such an AP the rest of the way down, so
+		 * that HOOK_CHIPSET_SHUTDOWN runs at S4 -> S5, the rails come
+		 * down at S5 -> G3, and the CONFIG_HIBERNATE_DELAY_SEC timer
+		 * starts.
+		 *
+		 * s4_exit_to_g3 marks that descent, because SLP_S5# stays
+		 * deasserted throughout it: chipset code that reads the signal
+		 * on entry to S5 has to skip the check while the flag is set,
+		 * or it takes the deasserted level for "the AP wants to come
+		 * up" and sends the state machine back here. The flag only
+		 * has to hold for the s5_inactivity_timeout seconds spent in
+		 * S5.
+		 *
+		 * Zero or negative holds the EC in S4 for as long as the AP
+		 * stays there. Zero is not "act immediately" here, unlike
+		 * s5_inactivity_timeout: the state machine also passes through
+		 * S4 on the way up, and dropping to S5 there would break the
+		 * boot.
+		 */
+		if (s4_inactivity_timeout <= 0) {
+			task_wait_event(-1);
+		} else if (task_wait_event(s4_inactivity_timeout * SECOND) ==
+			   TASK_EVENT_TIMER) {
+			CPRINTS("S4 idle for %ds, exiting to G3",
+				s4_inactivity_timeout);
+			s4_exit_to_g3 = true;
+			return POWER_S4S5;
+		}
+		break;
+
 	case POWER_S3:
 		__fallthrough;
 	case POWER_S0:
@@ -985,6 +1046,30 @@ static int command_s5_timeout(int argc, const char **argv)
 }
 DECLARE_CONSOLE_COMMAND(s5_timeout, command_s5_timeout, "[sec]",
 			"Set the timeout from S5 to G3 transition, "
+			"-1 to indicate no transition");
+#endif
+
+#ifdef CONFIG_CMD_S4_TIMEOUT
+/* Allow command-line access to configure our S4 delay for power testing */
+static int command_s4_timeout(int argc, const char **argv)
+{
+	char *e;
+
+	if (argc >= 2) {
+		uint32_t s = strtoi(argv[1], &e, 0);
+
+		if (*e)
+			return EC_ERROR_PARAM1;
+
+		s4_inactivity_timeout = s;
+	}
+
+	/* Print the current setting */
+	ccprintf("S4 inactivity timeout: %d s\n", s4_inactivity_timeout);
+	return EC_SUCCESS;
+}
+DECLARE_CONSOLE_COMMAND(s4_timeout, command_s4_timeout, "[sec]",
+			"Set the timeout from S4 to S5 transition, "
 			"-1 to indicate no transition");
 #endif
 
