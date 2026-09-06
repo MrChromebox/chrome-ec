@@ -158,6 +158,10 @@
 #define PROCHOT_DEASSERTION_ADAPTER_RATIO 100
 #define PROCHOT_DEASSERTION_ADAPTER_BATT_RATIO 90
 
+/* Power sequencing */
+/* Runtime knob for the S4 -> S5 timeout, for measuring hibernate drain. */
+#define CONFIG_CMD_S4_TIMEOUT
+
 /* PS2 defines */
 #define CONFIG_8042_AUX
 #define CONFIG_PS2
