@@ -47,6 +47,13 @@ static const int sleep_sig[] = {
 
 static int power_s5_up; /* Chipset is sequencing up or down */
 
+/*
+ * HOOK_CHIPSET_SHUTDOWN only queues PD/retimer teardown; that work still needs
+ * the rails. Hold this long after an EC-driven S4 soft-off exit before G3.
+ * ~200ms was measured on primus; 500ms leaves margin.
+ */
+#define S4_SOFT_OFF_SHUTDOWN_HOLD_MS 500
+
 #ifdef CONFIG_CHARGER
 /* Flag to indicate if power up was inhibited due to low battery SOC level. */
 static int power_up_inhibited;
@@ -495,7 +502,18 @@ enum power_state common_intel_x86_power_handle_state(enum power_state state)
 
 	case POWER_S3S5:
 		/* fallthrough */
-	case POWER_S4S5:
+	case POWER_S4S5: {
+		/*
+		 * Chipset code only returns POWER_S4S5 when SLP_S5# is
+		 * asserted. If we are in POWER_S4S5 with SLP_S5# still
+		 * deasserted, common.c started this descent from S4 idle
+		 * (hibernated AP). Steady POWER_S5 would treat that level as
+		 * a power-up request and bounce back to S4, so skip it.
+		 */
+		const bool s4_soft_off_exit =
+			(state == POWER_S4S5 &&
+			 chipset_get_sleep_signal(SYS_SLEEP_S5) == 1);
+
 		/* Call hooks before we remove power rails */
 		hook_notify(HOOK_CHIPSET_SHUTDOWN);
 
@@ -505,12 +523,19 @@ enum power_state common_intel_x86_power_handle_state(enum power_state state)
 		/* Call hooks after we remove power rails */
 		hook_notify(HOOK_CHIPSET_SHUTDOWN_COMPLETE);
 
+		power_s5_up = 0;
+
+		if (s4_soft_off_exit) {
+			crec_msleep(S4_SOFT_OFF_SHUTDOWN_HOLD_MS);
+			return POWER_S5G3;
+		}
+
 		/* Always enter into S5 state. The S5 state is required to
 		 * correctly handle global resets which have a bit of delay
 		 * while the SLP_Sx_L signals are asserted then deasserted.
 		 */
-		power_s5_up = 0;
 		return POWER_S5;
+	}
 
 	case POWER_S5G3:
 		return chipset_force_g3();
