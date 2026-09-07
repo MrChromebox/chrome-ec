@@ -64,7 +64,27 @@ static const uint16_t action_scancodes[] = {
 	[TK_PRIVACY_SCRN_TOGGLE] = SCANCODE_PRIVACY_SCRN_TOGGLE,
 };
 
+/* F1..F15 for KEYBD_TOP_ROW_FUNCTION (T1→F1 … T15→F15) */
+static const uint16_t function_scancodes[MAX_TOP_ROW_KEYS] = {
+	SCANCODE_F1,
+	SCANCODE_F2,
+	SCANCODE_F3,
+	SCANCODE_F4,
+	SCANCODE_F5,
+	SCANCODE_F6,
+	SCANCODE_F7,
+	SCANCODE_F8,
+	SCANCODE_F9,
+	SCANCODE_F10,
+	SCANCODE_F11,
+	SCANCODE_F12,
+	SCANCODE_F13,
+	SCANCODE_F14,
+	SCANCODE_F15,
+};
+
 static const struct ec_response_keybd_config *vivaldi_keybd;
+static enum keybd_top_row_mode top_row_mode = KEYBD_TOP_ROW_ACTION;
 
 static
 int get_vivaldi_keybd_config(struct host_cmd_handler_args *args)
@@ -105,10 +125,89 @@ const struct ec_response_keybd_config *board_vivaldi_keybd_config(void)
 	return &default_keybd;
 }
 
-static void vivaldi_init(void)
+/**
+ * Apply the active top-row mode to the scancode table.
+ *
+ * @return EC_SUCCESS, or EC_ERROR_* if Vivaldi is disabled / not ready
+ */
+static int vivaldi_apply_top_row_mode(enum keybd_top_row_mode mode)
 {
 	uint8_t i;
 
+	if (!vivaldi_keybd || !vivaldi_keybd->num_top_row_keys)
+		return EC_ERROR_BUSY;
+
+	for (i = 0; i < ARRAY_SIZE(vivaldi_keys); i++) {
+		uint8_t row, col, *mask;
+		enum action_key key;
+		uint16_t scancode;
+
+		row = vivaldi_keys[i].row;
+		col = vivaldi_keys[i].col;
+
+		if (col >= KEYBOARD_COLS_MAX || row >= KEYBOARD_ROWS) {
+			CPRINTS("VIVALDI: Bad (row,col) for T-%u: (%u,%u)",
+				i, row, col);
+		}
+
+		mask = &keyscan_config.actual_key_mask[col];
+		key = vivaldi_keybd->action_keys[i];
+
+		if (i >= vivaldi_keybd->num_top_row_keys || key == TK_ABSENT)
+			continue;
+
+		/* Enable the mask */
+		*mask |= BIT(row);
+
+		if (mode == KEYBD_TOP_ROW_FUNCTION)
+			scancode = function_scancodes[i];
+		else
+			scancode = action_scancodes[key];
+
+		set_scancode_set2(row, col, scancode);
+
+		if (key == TK_VOL_UP)
+			set_vol_up_key(row, col);
+
+	}
+
+	top_row_mode = mode;
+	CPRINTS("VIVALDI top row: %s (%u keys)",
+		mode == KEYBD_TOP_ROW_FUNCTION ? "function" : "action",
+		vivaldi_keybd->num_top_row_keys);
+	return EC_SUCCESS;
+}
+
+static
+int keybd_top_row_command(struct host_cmd_handler_args *args)
+{
+	struct ec_response_keybd_top_row *resp = args->response;
+
+	if (!vivaldi_keybd || !vivaldi_keybd->num_top_row_keys)
+		return EC_RES_ERROR;
+
+	if (args->params_size >= sizeof(struct ec_params_keybd_top_row)) {
+		const struct ec_params_keybd_top_row *p = args->params;
+
+		if (p->mode != KEYBD_TOP_ROW_ACTION &&
+		    p->mode != KEYBD_TOP_ROW_FUNCTION)
+			return EC_RES_INVALID_PARAM;
+
+		if (vivaldi_apply_top_row_mode(p->mode) != EC_SUCCESS)
+			return EC_RES_ERROR;
+	} else if (args->params_size != 0) {
+		return EC_RES_INVALID_PARAM;
+	}
+
+	resp->mode = top_row_mode;
+	args->response_size = sizeof(*resp);
+	return EC_RES_SUCCESS;
+}
+DECLARE_HOST_COMMAND(EC_CMD_KEYBD_TOP_ROW, keybd_top_row_command,
+		     EC_VER_MASK(0));
+
+static void vivaldi_init(void)
+{
 	/* Allow the boards to change the keyboard config */
 	vivaldi_keybd = board_vivaldi_keybd_config();
 
@@ -128,41 +227,39 @@ static void vivaldi_init(void)
 		return;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(vivaldi_keys); i++) {
-
-		uint8_t row, col, *mask;
-		enum action_key key;
-
-		row = vivaldi_keys[i].row;
-		col = vivaldi_keys[i].col;
-
-		if (col >= KEYBOARD_COLS_MAX || row >= KEYBOARD_ROWS) {
-			CPRINTS("VIVALDI: Bad (row,col) for T-%u: (%u,%u)",
-				i, row, col);
-		}
-
-		mask = &keyscan_config.actual_key_mask[col];
-
-		/*
-		 * Potentially indexing past meaningful data,
-		 * but we bounds check it below.
-		 */
-		key = vivaldi_keybd->action_keys[i];
-
-		if (i < vivaldi_keybd->num_top_row_keys && key != TK_ABSENT) {
-
-			/* Enable the mask */
-			*mask |= BIT(row);
-
-			/* Populate the scancode */
-			set_scancode_set2(row, col, action_scancodes[key]);
-			CPRINTS("VIVALDI key-%u (r-%u, c-%u) = scancode-%X",
-				i, row, col, action_scancodes[key]);
-
-			if (key == TK_VOL_UP)
-				set_vol_up_key(row, col);
-
-		}
-	}
+	vivaldi_apply_top_row_mode(KEYBD_TOP_ROW_ACTION);
 }
 DECLARE_HOOK(HOOK_INIT, vivaldi_init, HOOK_PRIO_DEFAULT);
+
+#ifdef CONFIG_CMD_KEYBOARD
+static int command_toprow(int argc, char **argv)
+{
+	enum keybd_top_row_mode mode;
+
+	if (argc == 2) {
+		if (!strcasecmp(argv[1], "action") ||
+		    !strcasecmp(argv[1], "0"))
+			mode = KEYBD_TOP_ROW_ACTION;
+		else if (!strcasecmp(argv[1], "function") ||
+			 !strcasecmp(argv[1], "fx") ||
+			 !strcasecmp(argv[1], "1"))
+			mode = KEYBD_TOP_ROW_FUNCTION;
+		else
+			return EC_ERROR_PARAM1;
+
+		if (vivaldi_apply_top_row_mode(mode) != EC_SUCCESS)
+			return EC_ERROR_BUSY;
+	} else if (argc != 1) {
+		return EC_ERROR_PARAM_COUNT;
+	}
+
+	ccprintf("Top row: %s\n",
+		 top_row_mode == KEYBD_TOP_ROW_FUNCTION ?
+			 "function (F1..Fn)" :
+			 "action (vivaldi)");
+	return EC_SUCCESS;
+}
+DECLARE_CONSOLE_COMMAND(toprow, command_toprow, "[action|function]",
+			"Get/set Vivaldi top-row scancode mode",
+			NULL);
+#endif
