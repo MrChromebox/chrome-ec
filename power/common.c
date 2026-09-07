@@ -521,7 +521,32 @@ static enum power_state power_common_state(void)
 		break;
 
 	case POWER_S4:
-		__fallthrough;
+		/*
+		 * S4 is soft-off (see chipset_in_state), but a hibernated AP
+		 * holds SLP_S4# asserted and SLP_S5# deasserted with no further
+		 * edge. Without an idle timeout the EC parks here forever with
+		 * the rails up, never runs HOOK_CHIPSET_SHUTDOWN, and never
+		 * reaches G3 / CONFIG_HIBERNATE_DELAY_SEC.
+		 *
+		 * Reuse the S5 inactivity budget. On expiry return POWER_S4S5
+		 * so shutdown hooks run; intel_x86 then drops to G3 when
+		 * SLP_S5# is still deasserted (see POWER_S4S5).
+		 *
+		 * Unlike S5, timeout <= 0 does not mean "leave immediately":
+		 * the state machine also passes through S4 on the way up, and
+		 * dropping to S5 there would break the boot.
+		 */
+		power_wait_signals(0);
+		if (s5_inactivity_timeout <= 0) {
+			task_wait_event(-1);
+		} else if (task_wait_event(s5_inactivity_timeout * SECOND) ==
+			   TASK_EVENT_TIMER) {
+			CPRINTS("S4 idle for %ds, exiting soft-off",
+				s5_inactivity_timeout);
+			return POWER_S4S5;
+		}
+		break;
+
 	case POWER_S3:
 		__fallthrough;
 	case POWER_S0:
@@ -980,12 +1005,12 @@ static int command_s5_timeout(int argc, const char **argv)
 	}
 
 	/* Print the current setting */
-	ccprintf("S5 inactivity timeout: %d s\n", s5_inactivity_timeout);
+	ccprintf("S5/S4 inactivity timeout: %d s\n", s5_inactivity_timeout);
 	return EC_SUCCESS;
 }
 DECLARE_CONSOLE_COMMAND(s5_timeout, command_s5_timeout, "[sec]",
-			"Set the timeout from S5 to G3 transition, "
-			"-1 to indicate no transition");
+			"Set soft-off idle timeout (S5->G3, and S4->S5->G3); "
+			"-1 disables, 0 leaves S5 immediately (S4 unchanged)");
 #endif
 
 #ifdef CONFIG_HIBERNATE
