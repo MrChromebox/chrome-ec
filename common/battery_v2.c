@@ -9,6 +9,7 @@
 #include "charge_state.h"
 #include "common.h"
 #include "console.h"
+#include "extpower.h"
 #include "hooks.h"
 #include "host_command.h"
 #include "math_util.h"
@@ -217,6 +218,9 @@ int update_static_battery_info(void)
 	int rv, ret;
 
 	struct battery_static_info *const bs = &battery_static[BATT_IDX_MAIN];
+	const struct battery_static_info saved_static = *bs;
+	const struct ec_response_battery_dynamic_info saved_dynamic =
+		battery_dynamic[BATT_IDX_MAIN];
 
 	/* Clear all static information. */
 	memset(bs, 0, sizeof(*bs));
@@ -278,12 +282,42 @@ int update_static_battery_info(void)
 	    !is_battery_string_reliable(bs->type_ext))
 		rv |= EC_ERROR_UNKNOWN;
 
-	/* Zero the dynamic entries. They'll come next. */
-	memset(&battery_dynamic[BATT_IDX_MAIN], 0,
-	       sizeof(battery_dynamic[BATT_IDX_MAIN]));
+	if (rv) {
+		/*
+		 * process_charge_state() skips update_dynamic_battery_info()
+		 * while the static info is bad, so what goes out here is what
+		 * the host keeps seeing until a later refresh succeeds.
+		 */
+		if (charge_get_status()->batt.is_present != BP_NO) {
+			*bs = saved_static;
+			battery_dynamic[BATT_IDX_MAIN] = saved_dynamic;
+			battery_dynamic[BATT_IDX_MAIN].flags |=
+				EC_BATT_FLAG_INVALID_DATA;
+		} else {
+			memset(&battery_dynamic[BATT_IDX_MAIN], 0,
+			       sizeof(battery_dynamic[BATT_IDX_MAIN]));
+			battery_dynamic[BATT_IDX_MAIN].flags =
+				EC_BATT_FLAG_INVALID_DATA;
+		}
 
-	if (rv)
+		/*
+		 * AC presence is the charger's. extpower_handle_update()
+		 * writes the same bit from the hook task, so the copy taken
+		 * on entry would land back on top of it.
+		 */
+		if (extpower_is_present())
+			battery_dynamic[BATT_IDX_MAIN].flags |=
+				EC_BATT_FLAG_AC_PRESENT;
+		else
+			battery_dynamic[BATT_IDX_MAIN].flags &=
+				~EC_BATT_FLAG_AC_PRESENT;
+
 		charge_problem(PR_STATIC_UPDATE, rv);
+	} else {
+		/* Zero the dynamic entries. They'll come next. */
+		memset(&battery_dynamic[BATT_IDX_MAIN], 0,
+		       sizeof(battery_dynamic[BATT_IDX_MAIN]));
+	}
 
 #ifdef HAS_TASK_HOSTCMD
 	battery_memmap_refresh(BATT_IDX_MAIN);

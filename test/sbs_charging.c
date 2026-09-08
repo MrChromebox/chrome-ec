@@ -5,6 +5,7 @@
  * Test charge_state behavior
  */
 
+#include "battery.h"
 #include "battery_smart.h"
 #include "charge_state.h"
 #include "chipset.h"
@@ -12,6 +13,7 @@
 #include "gpio.h"
 #include "hooks.h"
 #include "host_command.h"
+#include "i2c.h"
 #include "math_util.h"
 #include "power.h"
 #include "task.h"
@@ -131,6 +133,23 @@ test_static int wait_charging_state(void)
 	state = led_pwr_get_state();
 	ccprintf("[CHARGING TEST] state = %d\n", state);
 	return state;
+}
+
+/* sb_read() is test_mockable; anything not failed here goes to the mock. */
+test_static bool sb_reads_fail;
+
+int sb_read(int cmd, int *param)
+{
+	if (sb_reads_fail)
+		return EC_ERROR_UNKNOWN;
+	return i2c_read16(I2C_PORT_BATTERY, BATTERY_ADDR_FLAGS, cmd, param);
+}
+
+test_static enum battery_present mock_batt_present = BP_YES;
+
+enum battery_present battery_is_present(void)
+{
+	return mock_batt_present;
 }
 
 test_static int charge_control(enum ec_charge_control_mode mode)
@@ -1134,9 +1153,143 @@ test_static int test_battery_sustainer_with_idle(void)
 	return EC_SUCCESS;
 }
 
+test_static int test_static_read_failure_keeps_last_good(void)
+{
+	const int *memmap_cap = (int *)host_get_memmap(EC_MEMMAP_BATT_CAP);
+	const int *memmap_dcap = (int *)host_get_memmap(EC_MEMMAP_BATT_DCAP);
+	const uint8_t *memmap_flags = host_get_memmap(EC_MEMMAP_BATT_FLAG);
+	int good_dcap;
+	int i;
+
+	test_setup(1);
+	sb_write(SB_REMAINING_CAPACITY, 0x7800);
+	sb_write(SB_DESIGN_CAPACITY, 0x8000);
+	wait_charging_state();
+	TEST_EQ(*memmap_cap, 0x7800, "%d");
+
+	/*
+	 * A presence change is what asks for a static refresh. Cycle once
+	 * with the gauge answering, to see what a good picture looks like.
+	 */
+	mock_batt_present = BP_NO;
+	for (i = 0; i < 3; i++)
+		wait_charging_state();
+	mock_batt_present = BP_YES;
+	for (i = 0; i < 3; i++)
+		wait_charging_state();
+	good_dcap = *memmap_dcap;
+	TEST_ASSERT(good_dcap != 0);
+
+	/* Now do it again with the gauge mute, so the static refresh fails. */
+	mock_batt_present = BP_NO;
+	for (i = 0; i < 3; i++)
+		wait_charging_state();
+	sb_reads_fail = true;
+	mock_batt_present = BP_YES;
+	for (i = 0; i < 5; i++)
+		wait_charging_state();
+
+	TEST_EQ(*memmap_dcap, good_dcap, "%d");
+	TEST_EQ(*memmap_cap, 0x7800, "%d");
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_INVALID_DATA);
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_AC_PRESENT);
+
+	sb_reads_fail = false;
+	for (i = 0; i < 3; i++)
+		wait_charging_state();
+	TEST_ASSERT(!(*memmap_flags & EC_BATT_FLAG_INVALID_DATA));
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_BATT_PRESENT);
+	TEST_EQ(*memmap_dcap, good_dcap, "%d");
+	TEST_EQ(*memmap_cap, 0x7800, "%d");
+
+	return EC_SUCCESS;
+}
+
+test_static int test_static_read_failure_tracks_ac(void)
+{
+	const uint8_t *memmap_flags = host_get_memmap(EC_MEMMAP_BATT_FLAG);
+	int i;
+
+	test_setup(1);
+	wait_charging_state();
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_AC_PRESENT);
+
+	/* Park the charger task in a static refresh that keeps failing. */
+	mock_batt_present = BP_NO;
+	for (i = 0; i < 3; i++)
+		wait_charging_state();
+	sb_reads_fail = true;
+	mock_batt_present = BP_YES;
+	for (i = 0; i < 5; i++)
+		wait_charging_state();
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_INVALID_DATA);
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_AC_PRESENT);
+
+	/* Unplug while it is still failing. */
+	gpio_set_level(GPIO_AC_PRESENT, 0);
+	for (i = 0; i < 3; i++)
+		wait_charging_state();
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_INVALID_DATA);
+	TEST_ASSERT(!(*memmap_flags & EC_BATT_FLAG_AC_PRESENT));
+
+	/* And plug back in, still failing. */
+	gpio_set_level(GPIO_AC_PRESENT, 1);
+	for (i = 0; i < 3; i++)
+		wait_charging_state();
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_AC_PRESENT);
+
+	sb_reads_fail = false;
+	for (i = 0; i < 3; i++)
+		wait_charging_state();
+	TEST_ASSERT(!(*memmap_flags & EC_BATT_FLAG_INVALID_DATA));
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_AC_PRESENT);
+
+	return EC_SUCCESS;
+}
+
+test_static int test_removed_battery_reports_absent(void)
+{
+	const int *memmap_cap = (int *)host_get_memmap(EC_MEMMAP_BATT_CAP);
+	const uint8_t *memmap_flags = host_get_memmap(EC_MEMMAP_BATT_FLAG);
+	int i;
+
+	test_setup(1);
+	sb_write(SB_REMAINING_CAPACITY, 0x7800);
+	wait_charging_state();
+	TEST_EQ(*memmap_cap, 0x7800, "%d");
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_BATT_PRESENT);
+
+	mock_batt_present = BP_NO;
+	sb_reads_fail = true;
+	for (i = 0; i < 5; i++)
+		wait_charging_state();
+	TEST_ASSERT(!(*memmap_flags & EC_BATT_FLAG_BATT_PRESENT));
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_AC_PRESENT);
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_INVALID_DATA);
+	/*
+	 * Capacity keeps its last value; BATT_PRESENT is clear, so the host
+	 * knows there is nothing to read it from.
+	 */
+	TEST_EQ(*memmap_cap, 0x7800, "%d");
+
+	mock_batt_present = BP_YES;
+	sb_reads_fail = false;
+	wait_charging_state();
+	wait_charging_state();
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_BATT_PRESENT);
+	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_AC_PRESENT);
+	TEST_ASSERT(!(*memmap_flags & EC_BATT_FLAG_INVALID_DATA));
+	TEST_EQ(*memmap_cap, 0x7800, "%d");
+
+	return EC_SUCCESS;
+}
+
 void run_test(int argc, const char **argv)
 {
 	RUN_TEST(test_charge_state);
+	RUN_TEST(test_static_read_failure_keeps_last_good);
+	RUN_TEST(test_static_read_failure_tracks_ac);
+	RUN_TEST(test_removed_battery_reports_absent);
 	RUN_TEST(test_low_battery);
 	RUN_TEST(test_high_temp_battery);
 	RUN_TEST(test_cold_battery_with_ac);
