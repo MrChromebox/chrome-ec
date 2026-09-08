@@ -119,8 +119,8 @@ int fan_table_to_rpm(int fan, int *temp)
 
 	if (current_level < 0)
 		current_level = 0;
-	else if (current_level > NUM_FAN_LEVELS)
-		current_level = NUM_FAN_LEVELS;
+	else if (current_level >= NUM_FAN_LEVELS)
+		current_level = NUM_FAN_LEVELS - 1;
 
 	for (i = 0; i < TEMP_SENSOR_COUNT; i++)
 		prev_tmp[i] = temp[i];
