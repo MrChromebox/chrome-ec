@@ -143,6 +143,8 @@
 #define CONFIG_POWER_S0IX
 #define CONFIG_POWER_SLEEP_FAILURE_DETECTION
 #define CONFIG_POWER_TRACK_HOST_SLEEP_STATE
+/* Host timeout 0 uses this; avoid 10s hang reset under Linux/Windows. */
+#define CONFIG_SLEEP_TIMEOUT_MS 0xFFFF /* infinite */
 #define CONFIG_INA3221
 
 /* b/143501304 */
