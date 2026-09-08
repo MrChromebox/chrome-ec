@@ -20,6 +20,8 @@
 
 /* Battery */
 #define CONFIG_BATTERY_FUEL_GAUGE
+#define CONFIG_BATTERY_V2
+#define CONFIG_BATTERY_COUNT 1
 
 /* Charger */
 #define CONFIG_CHARGER_RAA489000
