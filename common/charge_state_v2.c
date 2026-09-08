@@ -773,8 +773,13 @@ static void charge_allocate_input_current_limit(void)
 /* Returns zero if every item was updated. */
 static int update_static_battery_info(void)
 {
+	char serial[EC_MEMMAP_TEXT_MAX];
+	char mfgr[EC_MEMMAP_TEXT_MAX];
+	char model[EC_MEMMAP_TEXT_MAX];
+	char type[EC_MEMMAP_TEXT_MAX];
 	char *batt_str;
 	int batt_serial;
+	int dcap = 0, dvlt = 0, lfcc = 0, ccnt = 0;
 	uint8_t batt_flags = 0;
 	/*
 	 * The return values have type enum ec_error_list, but EC_SUCCESS is
@@ -782,43 +787,84 @@ static int update_static_battery_info(void)
 	 */
 	int rv;
 
+	/*
+	 * Stage into locals. Never clear the published memmap until this
+	 * refresh succeeds — a transient gauge NAK must not look like a
+	 * missing pack / 0% to the host.
+	 */
+	memset(serial, 0, sizeof(serial));
+	memset(mfgr, 0, sizeof(mfgr));
+	memset(model, 0, sizeof(model));
+	memset(type, 0, sizeof(type));
+
 	/* Smart battery serial number is 16 bits */
-	batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_SERIAL);
-	memset(batt_str, 0, EC_MEMMAP_TEXT_MAX);
 	rv = battery_serial_number(&batt_serial);
 	if (!rv)
-		snprintf(batt_str, EC_MEMMAP_TEXT_MAX, "%04X", batt_serial);
+		snprintf(serial, sizeof(serial), "%04X", batt_serial);
 
 	/* Design Capacity of Full */
-	rv |= battery_design_capacity(
-		(int *)host_get_memmap(EC_MEMMAP_BATT_DCAP));
+	rv |= battery_design_capacity(&dcap);
 
 	/* Design Voltage */
-	rv |= battery_design_voltage(
-		(int *)host_get_memmap(EC_MEMMAP_BATT_DVLT));
+	rv |= battery_design_voltage(&dvlt);
 
 	/* Last Full Charge Capacity (this is only mostly static) */
-	rv |= battery_full_charge_capacity(
-		(int *)host_get_memmap(EC_MEMMAP_BATT_LFCC));
+	rv |= battery_full_charge_capacity(&lfcc);
 
 	/* Cycle Count */
-	rv |= battery_cycle_count((int *)host_get_memmap(EC_MEMMAP_BATT_CCNT));
+	rv |= battery_cycle_count(&ccnt);
 
 	/* Battery Manufacturer string */
-	batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_MFGR);
-	memset(batt_str, 0, EC_MEMMAP_TEXT_MAX);
-	rv |= battery_manufacturer_name(batt_str, EC_MEMMAP_TEXT_MAX);
+	rv |= battery_manufacturer_name(mfgr, sizeof(mfgr));
 
 	/* Battery Model string */
-	batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_MODEL);
-	memset(batt_str, 0, EC_MEMMAP_TEXT_MAX);
-	rv |= battery_device_name(batt_str, EC_MEMMAP_TEXT_MAX);
+	rv |= battery_device_name(model, sizeof(model));
 
 	/* Battery Type string */
-	batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_TYPE);
-	rv |= battery_device_chemistry(batt_str, EC_MEMMAP_TEXT_MAX);
+	rv |= battery_device_chemistry(type, sizeof(type));
 
-	/* Zero the dynamic entries. They'll come next. */
+	if (rv) {
+		problem(PR_STATIC_UPDATE, rv);
+
+		if (curr.batt.is_present == BP_NO) {
+			/* Pack gone: drop any published picture. */
+			batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_SERIAL);
+			memset(batt_str, 0, EC_MEMMAP_TEXT_MAX);
+			batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_MFGR);
+			memset(batt_str, 0, EC_MEMMAP_TEXT_MAX);
+			batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_MODEL);
+			memset(batt_str, 0, EC_MEMMAP_TEXT_MAX);
+			batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_TYPE);
+			memset(batt_str, 0, EC_MEMMAP_TEXT_MAX);
+			*(int *)host_get_memmap(EC_MEMMAP_BATT_DCAP) = 0;
+			*(int *)host_get_memmap(EC_MEMMAP_BATT_DVLT) = 0;
+			*(int *)host_get_memmap(EC_MEMMAP_BATT_CCNT) = 0;
+			*(int *)host_get_memmap(EC_MEMMAP_BATT_VOLT) = 0;
+			*(int *)host_get_memmap(EC_MEMMAP_BATT_RATE) = 0;
+			*(int *)host_get_memmap(EC_MEMMAP_BATT_CAP) = 0;
+			*(int *)host_get_memmap(EC_MEMMAP_BATT_LFCC) = 0;
+			if (extpower_is_present())
+				batt_flags |= EC_BATT_FLAG_AC_PRESENT;
+			batt_flags |= EC_BATT_FLAG_INVALID_DATA;
+			*host_get_memmap(EC_MEMMAP_BATT_FLAG) = batt_flags;
+		}
+		return rv;
+	}
+
+	/* Success: publish scratch values and reset dynamic for a refill. */
+	batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_SERIAL);
+	memcpy(batt_str, serial, EC_MEMMAP_TEXT_MAX);
+	*(int *)host_get_memmap(EC_MEMMAP_BATT_DCAP) = dcap;
+	*(int *)host_get_memmap(EC_MEMMAP_BATT_DVLT) = dvlt;
+	*(int *)host_get_memmap(EC_MEMMAP_BATT_LFCC) = lfcc;
+	*(int *)host_get_memmap(EC_MEMMAP_BATT_CCNT) = ccnt;
+	batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_MFGR);
+	memcpy(batt_str, mfgr, EC_MEMMAP_TEXT_MAX);
+	batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_MODEL);
+	memcpy(batt_str, model, EC_MEMMAP_TEXT_MAX);
+	batt_str = (char *)host_get_memmap(EC_MEMMAP_BATT_TYPE);
+	memcpy(batt_str, type, EC_MEMMAP_TEXT_MAX);
+
 	*(int *)host_get_memmap(EC_MEMMAP_BATT_VOLT) = 0;
 	*(int *)host_get_memmap(EC_MEMMAP_BATT_RATE) = 0;
 	*(int *)host_get_memmap(EC_MEMMAP_BATT_CAP) = 0;
@@ -827,13 +873,10 @@ static int update_static_battery_info(void)
 		batt_flags |= EC_BATT_FLAG_AC_PRESENT;
 	*host_get_memmap(EC_MEMMAP_BATT_FLAG) = batt_flags;
 
-	if (rv)
-		problem(PR_STATIC_UPDATE, rv);
-	else
-		/* No errors seen. Battery data is now present */
-		*host_get_memmap(EC_MEMMAP_BATTERY_VERSION) = 1;
+	/* No errors seen. Battery data is now present */
+	*host_get_memmap(EC_MEMMAP_BATTERY_VERSION) = 1;
 
-	return rv;
+	return EC_SUCCESS;
 }
 
 static void update_dynamic_battery_info(void)
@@ -921,6 +964,22 @@ static void update_dynamic_battery_info(void)
 		host_set_single_event(EC_HOST_EVENT_BATTERY_STATUS);
 }
 #else /* CONFIG_BATTERY_V2 */
+static int is_battery_string_reliable(const char *buf)
+{
+	/*
+	 * From is_string_printable rule, 0xFF is not printable.
+	 * So, EC should think battery string is unreliable if string
+	 * include 0xFF.
+	 */
+	while (*buf) {
+		if ((*buf) == 0xFF)
+			return 0;
+		buf++;
+	}
+
+	return 1;
+}
+
 static int update_static_battery_info(void)
 {
 	int batt_serial;
@@ -933,56 +992,104 @@ static int update_static_battery_info(void)
 
 	struct ec_response_battery_static_info_v1 *const bs =
 		&battery_static[BATT_IDX_MAIN];
+	struct ec_response_battery_static_info_v1 tmp;
 
-	/* Clear all static information. */
-	memset(bs, 0, sizeof(*bs));
+	/*
+	 * Fill a scratch copy. Never clear the published static/dynamic
+	 * caches until this refresh succeeds — a transient gauge NAK must
+	 * not look like a missing pack / 0% to the host.
+	 */
+	memset(&tmp, 0, sizeof(tmp));
 
 	/* Smart battery serial number is 16 bits */
 	rv = battery_serial_number(&batt_serial);
 	if (!rv)
-		snprintf(bs->serial_ext, sizeof(bs->serial_ext),
+		snprintf(tmp.serial_ext, sizeof(tmp.serial_ext),
 			 "%04X", batt_serial);
 
 	/* Design Capacity of Full */
 	ret = battery_design_capacity(&val);
 	if (!ret)
-		bs->design_capacity = val;
+		tmp.design_capacity = val;
 	rv |= ret;
 
 	/* Design Voltage */
 	ret = battery_design_voltage(&val);
 	if (!ret)
-		bs->design_voltage = val;
+		tmp.design_voltage = val;
 	rv |= ret;
 
 	/* Cycle Count */
 	ret = battery_cycle_count(&val);
 	if (!ret)
-		bs->cycle_count = val;
+		tmp.cycle_count = val;
 	rv |= ret;
 
 	/* Battery Manufacturer string */
-	rv |= battery_manufacturer_name(bs->manufacturer_ext,
-					sizeof(bs->manufacturer_ext));
+	rv |= battery_manufacturer_name(tmp.manufacturer_ext,
+					sizeof(tmp.manufacturer_ext));
 
 	/* Battery Model string */
-	rv |= battery_device_name(bs->model_ext, sizeof(bs->model_ext));
+	rv |= battery_device_name(tmp.model_ext, sizeof(tmp.model_ext));
 
 	/* Battery Type string */
-	rv |= battery_device_chemistry(bs->type_ext, sizeof(bs->type_ext));
+	rv |= battery_device_chemistry(tmp.type_ext, sizeof(tmp.type_ext));
 
-	/* Zero the dynamic entries. They'll come next. */
+	/*
+	 * b/181639264: Battery gauge follow SMBus SPEC and SMBus define
+	 * cumulative clock low extend time for both controller (master) and
+	 * peripheral (slave). However, I2C doesn't.
+	 * Regarding this issue, we observe EC sometimes pull I2C CLK low
+	 * a while after EC start running. Actually, we are not sure the
+	 * reason until now.
+	 * If EC pull I2C CLK low too long, and it may cause battery fw timeout
+	 * because battery count cumulative clock extend time over 25ms.
+	 * When it happened, battery will release both its CLK and DATA and
+	 * reset itself. So, EC may get 0xFF when EC keep reading data from
+	 * battery. Battery static information will be unreliable and need to
+	 * be updated.
+	 * This change is improvement that EC should retry if battery string is
+	 * unreliable.
+	 */
+	if (!is_battery_string_reliable(tmp.serial_ext) ||
+	    !is_battery_string_reliable(tmp.manufacturer_ext) ||
+	    !is_battery_string_reliable(tmp.model_ext) ||
+	    !is_battery_string_reliable(tmp.type_ext))
+		rv |= EC_ERROR_UNKNOWN;
+
+	if (rv) {
+		problem(PR_STATIC_UPDATE, rv);
+
+		if (curr.batt.is_present == BP_NO) {
+			/*
+			 * Pack is gone: drop any published picture so the
+			 * host does not keep reading the previous insertion.
+			 */
+			memset(bs, 0, sizeof(*bs));
+			memset(&battery_dynamic[BATT_IDX_MAIN], 0,
+			       sizeof(battery_dynamic[BATT_IDX_MAIN]));
+			battery_dynamic[BATT_IDX_MAIN].flags =
+				EC_BATT_FLAG_INVALID_DATA;
+			if (extpower_is_present())
+				battery_dynamic[BATT_IDX_MAIN].flags |=
+					EC_BATT_FLAG_AC_PRESENT;
+#ifdef HAS_TASK_HOSTCMD
+			battery_memmap_refresh(BATT_IDX_MAIN);
+#endif
+		}
+		return rv;
+	}
+
+	/* Success: publish the scratch copy and reset dynamic for a refill. */
+	*bs = tmp;
 	memset(&battery_dynamic[BATT_IDX_MAIN], 0,
 	       sizeof(battery_dynamic[BATT_IDX_MAIN]));
-
-	if (rv)
-		problem(PR_STATIC_UPDATE, rv);
 
 #ifdef HAS_TASK_HOSTCMD
 	battery_memmap_refresh(BATT_IDX_MAIN);
 #endif
 
-	return rv;
+	return EC_SUCCESS;
 }
 
 static void update_dynamic_battery_info(void)
@@ -2125,8 +2232,15 @@ wait_for_it:
 		/* Keep the AP informed */
 		if (need_static)
 			need_static = update_static_battery_info();
-		/* Wait on the dynamic info until the static info is good. */
-		if (!need_static)
+		/*
+		 * Wait on the dynamic info until the static info is good — but only
+		 * on the first publish for this insertion. Once static has been
+		 * published, a later failed refresh must not freeze SoC / flags for
+		 * the whole gauge-NAK window.
+		 */
+		if (!need_static ||
+		    *(int *)host_get_memmap(EC_MEMMAP_BATT_DCAP) ||
+		    *(int *)host_get_memmap(EC_MEMMAP_BATT_DVLT))
 			update_dynamic_battery_info();
 		notify_host_of_low_battery_charge();
 		notify_host_of_low_battery_voltage();
