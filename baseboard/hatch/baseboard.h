@@ -57,6 +57,8 @@
 #define CONFIG_POWER_S0IX
 #define CONFIG_POWER_S0IX_FAILURE_DETECTION
 #define CONFIG_POWER_TRACK_HOST_SLEEP_STATE
+/* Host timeout 0 uses this; avoid 10s hang reset under Linux/Windows. */
+#define CONFIG_SLEEP_TIMEOUT_MS 0xFFFF /* infinite */
 
 /* Common Keyboard Defines */
 #define CONFIG_CMD_KEYBOARD
