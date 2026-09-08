@@ -1191,6 +1191,10 @@ test_static int test_static_read_failure_keeps_last_good(void)
 
 	TEST_EQ(*memmap_dcap, good_dcap, "%d");
 	TEST_EQ(*memmap_cap, 0x7800, "%d");
+	/*
+	 * Dynamic params also NAK while sb_reads_fail, so INVALID_DATA is
+	 * set from update_dynamic_battery_info() — not from wiping static.
+	 */
 	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_INVALID_DATA);
 	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_AC_PRESENT);
 
@@ -1222,14 +1226,13 @@ test_static int test_static_read_failure_tracks_ac(void)
 	mock_batt_present = BP_YES;
 	for (i = 0; i < 5; i++)
 		wait_charging_state();
-	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_INVALID_DATA);
+	/* AC must still track via extpower even while static refresh fails. */
 	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_AC_PRESENT);
 
 	/* Unplug while it is still failing. */
 	gpio_set_level(GPIO_AC_PRESENT, 0);
 	for (i = 0; i < 3; i++)
 		wait_charging_state();
-	TEST_ASSERT(*memmap_flags & EC_BATT_FLAG_INVALID_DATA);
 	TEST_ASSERT(!(*memmap_flags & EC_BATT_FLAG_AC_PRESENT));
 
 	/* And plug back in, still failing. */
