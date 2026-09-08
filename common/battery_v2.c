@@ -15,6 +15,7 @@
 #include "charge_state.h"
 #include "common.h"
 #include "console.h"
+#include "extpower.h"
 #include "hooks.h"
 #include "host_command.h"
 #include "math_util.h"
@@ -223,44 +224,49 @@ int update_static_battery_info(void)
 	int rv, ret;
 
 	struct battery_static_info *const bs = &battery_static[BATT_IDX_MAIN];
+	struct battery_static_info tmp;
 
-	/* Clear all static information. */
-	memset(bs, 0, sizeof(*bs));
+	/*
+	 * Fill a scratch copy. Never clear the published static/dynamic
+	 * caches until this refresh succeeds — a transient gauge NAK must
+	 * not look like a missing pack / 0% to the host.
+	 */
+	memset(&tmp, 0, sizeof(tmp));
 
 	/* Smart battery serial number is 16 bits */
 	rv = battery_serial_number(&batt_serial);
 	if (!rv)
-		if (snprintf(bs->serial_ext, sizeof(bs->serial_ext), "%04X",
+		if (snprintf(tmp.serial_ext, sizeof(tmp.serial_ext), "%04X",
 			     batt_serial) <= 0)
 			rv |= EC_ERROR_UNKNOWN;
 
 	/* Design Capacity of Full */
 	ret = battery_design_capacity(&val);
 	if (!ret)
-		bs->design_capacity = val;
+		tmp.design_capacity = val;
 	rv |= ret;
 
 	/* Design Voltage */
 	ret = battery_design_voltage(&val);
 	if (!ret)
-		bs->design_voltage = val;
+		tmp.design_voltage = val;
 	rv |= ret;
 
 	/* Cycle Count */
 	ret = battery_cycle_count(&val);
 	if (!ret)
-		bs->cycle_count = val;
+		tmp.cycle_count = val;
 	rv |= ret;
 
 	/* Battery Manufacturer string */
-	rv |= battery_manufacturer_name(bs->manufacturer_ext,
-					sizeof(bs->manufacturer_ext));
+	rv |= battery_manufacturer_name(tmp.manufacturer_ext,
+					sizeof(tmp.manufacturer_ext));
 
 	/* Battery Model string */
-	rv |= battery_device_name(bs->model_ext, sizeof(bs->model_ext));
+	rv |= battery_device_name(tmp.model_ext, sizeof(tmp.model_ext));
 
 	/* Battery Type string */
-	rv |= battery_device_chemistry(bs->type_ext, sizeof(bs->type_ext));
+	rv |= battery_device_chemistry(tmp.type_ext, sizeof(tmp.type_ext));
 
 	/*
 	 * b/181639264: Battery gauge follow SMBus SPEC and SMBus define
@@ -278,25 +284,52 @@ int update_static_battery_info(void)
 	 * This change is improvement that EC should retry if battery string is
 	 * unreliable.
 	 */
-	if (!is_battery_string_reliable(bs->serial_ext) ||
-	    !is_battery_string_reliable(bs->manufacturer_ext) ||
-	    !is_battery_string_reliable(bs->model_ext) ||
-	    !is_battery_string_reliable(bs->type_ext))
+	if (!is_battery_string_reliable(tmp.serial_ext) ||
+	    !is_battery_string_reliable(tmp.manufacturer_ext) ||
+	    !is_battery_string_reliable(tmp.model_ext) ||
+	    !is_battery_string_reliable(tmp.type_ext))
 		rv |= EC_ERROR_UNKNOWN;
 
-	/* Zero the dynamic entries. They'll come next. */
+	if (rv) {
+		charge_problem(PR_STATIC_UPDATE, rv);
+
+		if (charge_get_status()->batt.is_present == BP_NO) {
+			/*
+			 * Pack is gone: drop any published picture so the
+			 * host does not keep reading the previous insertion.
+			 */
+			memset(bs, 0, sizeof(*bs));
+			memset(&battery_dynamic[BATT_IDX_MAIN], 0,
+			       sizeof(battery_dynamic[BATT_IDX_MAIN]));
+			battery_dynamic[BATT_IDX_MAIN].flags =
+				EC_BATT_FLAG_INVALID_DATA;
+			if (extpower_is_present())
+				battery_dynamic[BATT_IDX_MAIN].flags |=
+					EC_BATT_FLAG_AC_PRESENT;
+#ifdef HAS_TASK_HOSTCMD
+			battery_memmap_refresh(BATT_IDX_MAIN);
+#endif
+		}
+		/*
+		 * Otherwise leave published static/dynamic/memmap alone.
+		 * extpower_handle_update() already maintains AC in the
+		 * memmap; refreshing here would only risk clobbering it.
+		 */
+		return rv;
+	}
+
+	/* Success: publish the scratch copy and reset dynamic for a refill. */
+	*bs = tmp;
 	memset(&battery_dynamic[BATT_IDX_MAIN], 0,
 	       sizeof(battery_dynamic[BATT_IDX_MAIN]));
-
-	if (rv)
-		charge_problem(PR_STATIC_UPDATE, rv);
 
 #ifdef HAS_TASK_HOSTCMD
 	battery_memmap_refresh(BATT_IDX_MAIN);
 #endif
 
-	return rv;
+	return EC_SUCCESS;
 }
+
 
 void update_dynamic_battery_info(void)
 {

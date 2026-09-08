@@ -1522,8 +1522,14 @@ static int process_charge_state(int *need_staticp, int sleep_usec)
 	if (*need_staticp)
 		*need_staticp = update_static_battery_info();
 
-	/* Wait on the dynamic info until the static info is good. */
-	if (!*need_staticp)
+	/*
+	 * Wait on the dynamic info until the static info is good — but only
+	 * on the first publish for this insertion. Once static has been
+	 * published, a later failed refresh must not freeze SoC / flags for
+	 * the whole gauge-NAK window.
+	 */
+	if (!*need_staticp || battery_static[BATT_IDX_MAIN].design_capacity ||
+	    battery_static[BATT_IDX_MAIN].design_voltage)
 		update_dynamic_battery_info();
 	notify_host_of_low_battery_charge();
 	notify_host_of_low_battery_voltage();
