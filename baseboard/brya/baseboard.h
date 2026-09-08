@@ -111,6 +111,8 @@
 #define CONFIG_POWER_S4_RESIDENCY
 #define CONFIG_POWER_SLEEP_FAILURE_DETECTION
 #define CONFIG_POWER_TRACK_HOST_SLEEP_STATE
+/* Host timeout 0 uses this; avoid 10s hang reset under Linux/Windows. */
+#define CONFIG_SLEEP_TIMEOUT_MS 0xFFFF /* infinite */
 #define CONFIG_LOW_POWER_IDLE
 
 #define CONFIG_HOST_INTERFACE_ESPI_RESET_SLP_SX_VW_ON_ESPI_RST
