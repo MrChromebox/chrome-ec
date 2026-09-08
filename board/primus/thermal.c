@@ -120,6 +120,9 @@ int fan_table_to_rpm(int fan, int *temp, enum temp_sensor_id temp_sensor)
 	if (current_level < 0)
 		current_level = 0;
 
+	if (current_level >= num_fan_levels)
+		current_level = num_fan_levels - 1;
+
 	if (current_level != prev_current_level) {
 		CPRINTS("temp: %d, prev_temp: %d", temp[temp_sensor],
 			prev_temp[temp_sensor]);
