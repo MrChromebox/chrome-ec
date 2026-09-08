@@ -143,6 +143,10 @@
 #undef CONFIG_CMD_TIMERINFO
 #undef CONFIG_CMD_TYPEC
 #undef CONFIG_CONSOLE_CMDHELP
+/* Free flash for Vivaldi top-row host command (~200B over before this) */
+#undef CONFIG_CMD_MEM
+#undef CONFIG_CMD_MD
+#undef CONFIG_CMD_RW
 
 #undef DEFERRABLE_MAX_COUNT
 #define DEFERRABLE_MAX_COUNT 16
