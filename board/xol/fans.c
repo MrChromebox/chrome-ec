@@ -50,14 +50,15 @@ struct fan_step {
 	int rpm;
 };
 
+/* Old table hit rpm_max at 52C. Stretch so 4100 is at 75C, not mid-load. */
 static const struct fan_step fan_table[] = {
-	{ .on = 38, .off = 0, .rpm = 0 },
-	{ .on = 41, .off = 34, .rpm = 2100 },
-	{ .on = 44, .off = 37, .rpm = 2400 },
-	{ .on = 47, .off = 40, .rpm = 2700 },
-	{ .on = 50, .off = 43, .rpm = 3100 },
-	{ .on = 52, .off = 46, .rpm = 3500 },
-	{ .on = 127, .off = 49, .rpm = 4100 },
+	{ .on = 43, .off = 0, .rpm = 0 },
+	{ .on = 47, .off = 40, .rpm = 2100 },
+	{ .on = 52, .off = 43, .rpm = 2400 },
+	{ .on = 60, .off = 47, .rpm = 2700 },
+	{ .on = 70, .off = 52, .rpm = 3100 },
+	{ .on = 75, .off = 60, .rpm = 3500 },
+	{ .on = 127, .off = 70, .rpm = 4100 },
 };
 
 int fan_table_to_rpm(int fan, int *temp, enum temp_sensor_id temp_sensor)

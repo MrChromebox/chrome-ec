@@ -293,23 +293,10 @@ static const struct ec_thermal_config thermal_cpu = {
 	.temp_host_release = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(80),
 	},
-	.temp_fan_off = C_TO_K(35),
-	.temp_fan_max = C_TO_K(60),
+	.temp_fan_off = C_TO_K(40),
+	.temp_fan_max = C_TO_K(75),
 };
 
-/*
- * TODO(b/180681346): update for Alder Lake/brya
- *
- * Inductor limits - used for both charger and PP3300 regulator
- *
- * Need to use the lower of the charger IC, PP3300 regulator, and the inductors
- *
- * Charger max recommended temperature 100C, max absolute temperature 125C
- * PP3300 regulator: operating range -40 C to 145 C
- *
- * Inductors: limit of 125c
- * PCB: limit is 80c
- */
 static const struct ec_thermal_config thermal_ambient = {
 	.temp_host = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(85),
@@ -318,8 +305,8 @@ static const struct ec_thermal_config thermal_ambient = {
 	.temp_host_release = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(80),
 	},
-	.temp_fan_off = C_TO_K(35),
-	.temp_fan_max = C_TO_K(60),
+	.temp_fan_off = C_TO_K(40),
+	.temp_fan_max = C_TO_K(75),
 };
 
 /*
@@ -341,8 +328,8 @@ const static struct ec_thermal_config thermal_charger = {
 	.temp_host_release = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(90),
 	},
-	.temp_fan_off = C_TO_K(35),
-	.temp_fan_max = C_TO_K(65),
+	.temp_fan_off = C_TO_K(60),
+	.temp_fan_max = C_TO_K(82),
 };
 
 /*
@@ -356,8 +343,8 @@ static const struct ec_thermal_config thermal_wwan = {
 	.temp_host_release = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(100),
 	},
-	.temp_fan_off = C_TO_K(35),
-	.temp_fan_max = C_TO_K(60),
+	.temp_fan_off = C_TO_K(40),
+	.temp_fan_max = C_TO_K(75),
 };
 
 struct ec_thermal_config thermal_params[] = {

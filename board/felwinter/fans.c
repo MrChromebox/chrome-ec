@@ -31,8 +31,8 @@ static const struct fan_conf fan_conf_0 = {
 };
 
 static const struct fan_rpm fan_rpm_0 = {
-	.rpm_min = 1100,
-	.rpm_start = 2000,
+	.rpm_min = 2300,
+	.rpm_start = 2300,
 	.rpm_max = 5000,
 };
 

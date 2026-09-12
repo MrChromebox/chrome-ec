@@ -30,16 +30,11 @@ static const struct fan_conf fan_conf_0 = {
 	.enable_gpio = GPIO_EN_PP5000_FAN,
 };
 
-/*
- * TOOD(b/194774929): need to update for real fan
- *
- * Prototype fan spins at about 7200 RPM at 100% PWM.
- * Set minimum at around 30% PWM.
- */
+/* Production fan tops out near 6000; 7200 was the proto PWM 100%. */
 static const struct fan_rpm fan_rpm_0 = {
 	.rpm_min = 2200,
 	.rpm_start = 2200,
-	.rpm_max = 7200,
+	.rpm_max = 6000,
 };
 
 const struct fan_t fans[FAN_CH_COUNT] = {
