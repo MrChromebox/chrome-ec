@@ -281,11 +281,11 @@ const struct fan_conf fan_conf_0 = {
 	.enable_gpio = GPIO_EN_PP5000_FAN,
 };
 
-/* Default */
+/* 6900 was a placeholder; 5500 is the real top. */
 const struct fan_rpm fan_rpm_0 = {
-	.rpm_min = 3100,
-	.rpm_start = 3100,
-	.rpm_max = 6900,
+	.rpm_min = 3000,
+	.rpm_start = 3000,
+	.rpm_max = 5500,
 };
 
 const struct fan_t fans[FAN_CH_COUNT] = {
@@ -328,13 +328,8 @@ const struct temp_sensor_t temp_sensors[] = {
 BUILD_ASSERT(ARRAY_SIZE(temp_sensors) == TEMP_SENSOR_COUNT);
 
 
-/* Hatch Temperature sensors */
-/*
- * TODO(b/124316213): These setting need to be reviewed and set appropriately
- * for Hatch. They matter when the EC is controlling the fan as opposed to DPTF
- * control.
- */
-const static struct ec_thermal_config thermal_a = {
+/* 25-50 slammed to rpm_max. */
+const static struct ec_thermal_config thermal_ambient = {
 	.temp_host = {
 		[EC_TEMP_THRESH_WARN] = 0,
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(75),
@@ -345,16 +340,47 @@ const static struct ec_thermal_config thermal_a = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(65),
 		[EC_TEMP_THRESH_HALT] = 0,
 	},
-	.temp_fan_off = C_TO_K(25),
-	.temp_fan_max = C_TO_K(50),
+	.temp_fan_off = C_TO_K(40),
+	.temp_fan_max = C_TO_K(61),
+};
+
+const static struct ec_thermal_config thermal_charger = {
+	.temp_host = {
+		[EC_TEMP_THRESH_WARN] = 0,
+		[EC_TEMP_THRESH_HIGH] = C_TO_K(75),
+		[EC_TEMP_THRESH_HALT] = C_TO_K(80),
+	},
+	.temp_host_release = {
+		[EC_TEMP_THRESH_WARN] = 0,
+		[EC_TEMP_THRESH_HIGH] = C_TO_K(65),
+		[EC_TEMP_THRESH_HALT] = 0,
+	},
+	.temp_fan_off = C_TO_K(40),
+	.temp_fan_max = C_TO_K(55),
+};
+
+const static struct ec_thermal_config thermal_cpu = {
+	.temp_host = {
+		[EC_TEMP_THRESH_WARN] = 0,
+		[EC_TEMP_THRESH_HIGH] = C_TO_K(95),
+		[EC_TEMP_THRESH_HALT] = C_TO_K(105),
+	},
+	.temp_host_release = {
+		[EC_TEMP_THRESH_WARN] = 0,
+		[EC_TEMP_THRESH_HIGH] = C_TO_K(85),
+		[EC_TEMP_THRESH_HALT] = 0,
+	},
+	.temp_fan_off = C_TO_K(45),
+	.temp_fan_max = C_TO_K(62),
 };
 
 struct ec_thermal_config thermal_params[TEMP_SENSOR_COUNT];
 
 static void setup_fans(void)
 {
-	thermal_params[TEMP_SENSOR_1] = thermal_a;
-	thermal_params[TEMP_SENSOR_2] = thermal_a;
+	thermal_params[TEMP_SENSOR_1] = thermal_ambient;
+	thermal_params[TEMP_SENSOR_2] = thermal_charger;
+	thermal_params[TEMP_SENSOR_3] = thermal_cpu;
 }
 
 static void board_init(void)

@@ -314,10 +314,10 @@ const struct fan_conf fan_conf_0 = {
 	.enable_gpio = GPIO_EN_PP5000_FAN,
 };
 
-/* Default */
+/* 1000 RPM is below stall. */
 const struct fan_rpm fan_rpm_0 = {
-	.rpm_min = 1000,
-	.rpm_start = 1000,
+	.rpm_min = 3000,
+	.rpm_start = 3000,
 	.rpm_max = 5900,
 };
 
@@ -360,12 +360,7 @@ const struct temp_sensor_t temp_sensors[] = {
 };
 BUILD_ASSERT(ARRAY_SIZE(temp_sensors) == TEMP_SENSOR_COUNT);
 
-/* Nightfury Temperature sensors */
-/*
- * TODO(b/138578073): These setting need to be reviewed and set appropriately
- * for Nightfury. They matter when the EC is controlling the fan as opposed to DPTF
- * control.
- */
+/* 25-50 slammed to rpm_max at idle-ish board temps. */
 const static struct ec_thermal_config thermal_a = {
 	.temp_host = {
 		[EC_TEMP_THRESH_WARN] = 0,
@@ -377,8 +372,8 @@ const static struct ec_thermal_config thermal_a = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(65),
 		[EC_TEMP_THRESH_HALT] = 0,
 	},
-	.temp_fan_off = C_TO_K(25),
-	.temp_fan_max = C_TO_K(50),
+	.temp_fan_off = C_TO_K(39),
+	.temp_fan_max = C_TO_K(75),
 };
 
 struct ec_thermal_config thermal_params[] = {
