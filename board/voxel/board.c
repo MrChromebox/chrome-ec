@@ -176,10 +176,7 @@ const struct fan_t fans[FAN_CH_COUNT] = {
 /******************************************************************************/
 /* EC thermal management configuration */
 
-/*
- * Reference that temperature and fan settings
- * are derived from data in b/167523658#39
- */
+/* 25C start spins the fan at idle; keep the wide 90C max. */
 const static struct ec_thermal_config thermal_cpu = {
 	.temp_host = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(75),
@@ -188,7 +185,7 @@ const static struct ec_thermal_config thermal_cpu = {
 	.temp_host_release = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(68),
 	},
-	.temp_fan_off = C_TO_K(25),
+	.temp_fan_off = C_TO_K(39),
 	.temp_fan_max = C_TO_K(90),
 };
 

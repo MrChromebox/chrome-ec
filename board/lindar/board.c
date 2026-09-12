@@ -263,6 +263,7 @@ const struct fan_t fans[FAN_CH_COUNT] = {
  * 130 C.  However, sensor is located next to DDR, so we need to use the lower
  * DDR temperature limit (100 C)
  */
+/* 30-60 hit rpm_max at mid-load. */
 const static struct ec_thermal_config thermal_cpu = {
 	.temp_host = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(90),
@@ -271,8 +272,8 @@ const static struct ec_thermal_config thermal_cpu = {
 	.temp_host_release = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(85),
 	},
-	.temp_fan_off = C_TO_K(30),
-	.temp_fan_max = C_TO_K(60),
+	.temp_fan_off = C_TO_K(39),
+	.temp_fan_max = C_TO_K(75),
 };
 
 /*
@@ -294,8 +295,8 @@ const static struct ec_thermal_config thermal_inductor = {
 	.temp_host_release = {
 		[EC_TEMP_THRESH_HIGH] = C_TO_K(85),
 	},
-	.temp_fan_off = C_TO_K(30),
-	.temp_fan_max = C_TO_K(60),
+	.temp_fan_off = C_TO_K(39),
+	.temp_fan_max = C_TO_K(75),
 };
 
 
