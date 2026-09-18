@@ -13,6 +13,9 @@
 #define VARIANT_OCTOPUS_CHARGER_ISL9238
 #include "baseboard.h"
 
+/* ITE8320 has no AP_IDLE BBRAM preserve. */
+#undef CONFIG_POWER_BUTTON_INIT_IDLE
+
 /* I2C bus configuraiton */
 #define I2C_PORT_ACCEL	I2C_PORT_SENSOR
 
