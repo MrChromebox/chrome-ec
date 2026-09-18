@@ -201,6 +201,7 @@
 #define CONFIG_CHIPSET_RESET_HOOK
 #define CONFIG_POWER_BUTTON
 #define CONFIG_POWER_BUTTON_X86
+#define CONFIG_POWER_BUTTON_INIT_IDLE
 #define CONFIG_POWER_COMMON
 #define CONFIG_POWER_TRACK_HOST_SLEEP_STATE
 /* Host timeout 0 uses this; avoid 10s hang reset under Linux/Windows. */
