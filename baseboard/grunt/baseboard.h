@@ -108,6 +108,7 @@
 #define CONFIG_POWER_BUTTON_SHUTDOWN_STRETCH	(5 * SECOND)
 #define CONFIG_POWER_BUTTON
 #define CONFIG_POWER_BUTTON_X86
+#define CONFIG_POWER_BUTTON_INIT_IDLE
 
 /*
  * On power-on, H1 releases the EC from reset but then quickly asserts and
