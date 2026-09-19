@@ -332,7 +332,7 @@ uint32_t chip_read_reset_flags(void)
  * shuts down, it boots immediately. If the system shuts down gracefully,
  * it'll stay at S5 and wait for power button press.
  */
-static void board_chipset_startup(void)
+static void npcx_idle_chipset_startup(void)
 {
 	uint32_t flags = bbram_data_read(BBRM_DATA_INDEX_SAVED_RESET_FLAGS);
 	flags &= ~RESET_FLAG_AP_OFF;
@@ -340,9 +340,9 @@ static void board_chipset_startup(void)
 	system_clear_reset_flags(RESET_FLAG_AP_OFF);
 	CPRINTS("Cleared AP_OFF flag");
 }
-DECLARE_HOOK(HOOK_CHIPSET_STARTUP, board_chipset_startup, HOOK_PRIO_DEFAULT);
+DECLARE_HOOK(HOOK_CHIPSET_STARTUP, npcx_idle_chipset_startup, HOOK_PRIO_DEFAULT);
 
-static void board_chipset_shutdown(void)
+static void npcx_idle_chipset_shutdown(void)
 {
 	uint32_t flags = bbram_data_read(BBRM_DATA_INDEX_SAVED_RESET_FLAGS);
 	flags |= RESET_FLAG_AP_OFF;
@@ -350,7 +350,7 @@ static void board_chipset_shutdown(void)
 	system_set_reset_flags(RESET_FLAG_AP_OFF);
 	CPRINTS("Set AP_OFF flag");
 }
-DECLARE_HOOK(HOOK_CHIPSET_SHUTDOWN, board_chipset_shutdown,
+DECLARE_HOOK(HOOK_CHIPSET_SHUTDOWN, npcx_idle_chipset_shutdown,
 	     /* Slightly higher than handle_pending_reboot because
 	      * it may clear AP_OFF flag. */
 	     HOOK_PRIO_DEFAULT - 1);
