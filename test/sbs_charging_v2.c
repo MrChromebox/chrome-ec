@@ -748,7 +748,7 @@ static int test_battery_sustainer(void)
 	ccprintf("Test lower < SoC < upper.\n");
 	display_soc = 799;
 	wait_charging_state();
-	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_DISCHARGE);
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_IDLE);
 	ccprintf("Pass.\n");
 
 	ccprintf("Test SoC < lower < upper.\n");
