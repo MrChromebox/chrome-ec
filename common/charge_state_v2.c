@@ -1766,6 +1766,20 @@ static int battery_outside_charging_temperature(void)
 }
 #endif
 
+/*
+ * battery_compensate_params() only computes the display charge when
+ * CONFIG_BATT_HOST_FULL_FACTOR is 100; otherwise it stays 0, so use the
+ * battery's own SoC.
+ */
+static int sustain_get_soc(void)
+{
+#if CONFIG_BATT_HOST_FULL_FACTOR == 100
+	return charge_get_display_charge() / 10;
+#else
+	return charge_get_percent();
+#endif
+}
+
 static void sustain_battery_soc(void)
 {
 	enum ec_charge_control_mode mode = get_chg_ctrl_mode();
@@ -1780,7 +1794,7 @@ static void sustain_battery_soc(void)
 		return;
 	}
 
-	soc = charge_get_display_charge() / 10;
+	soc = sustain_get_soc();
 	/* A lower limit of 0 means no start threshold: top up below upper. */
 	lower = sustain_soc.lower ? sustain_soc.lower : sustain_soc.upper;
 
