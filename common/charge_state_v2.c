@@ -56,6 +56,8 @@ static unsigned int user_current_limit = -1U;
 test_export_static timestamp_t shutdown_warning_time;
 static timestamp_t precharge_start_time;
 static struct sustain_soc sustain_soc = { -1, -1 };
+/* Choose the sustainer mode from the SoC on the next evaluation. */
+static int sustain_soc_restart = 1;
 
 /* Is battery connected but unresponsive after precharge? */
 static int battery_seems_to_be_dead;
@@ -141,6 +143,8 @@ static int battery_sustainer_set(int8_t lower, int8_t upper)
 #ifndef CONFIG_CHARGER_DISCHARGE_ON_AC
 		return EC_RES_UNAVAILABLE;
 #else
+		if (sustain_soc.lower != lower || sustain_soc.upper != upper)
+			sustain_soc_restart = 1;
 		sustain_soc.lower = lower;
 		sustain_soc.upper = upper;
 		return EC_SUCCESS;
@@ -685,46 +689,62 @@ const struct batt_params *charger_current_battery_params(void)
 static void sustain_battery_soc(void)
 {
 	enum ec_charge_control_mode mode = get_chg_ctrl_mode();
-	int soc;
+	int soc, lower;
 	int rv;
 
 	/* If either AC or battery is not present, nothing to do. */
 	if (!curr.ac || curr.batt.is_present != BP_YES
-			|| !battery_sustainer_enabled())
+			|| !battery_sustainer_enabled()) {
+		/* Choose the mode from scratch once the sustainer can run. */
+		sustain_soc_restart = 1;
 		return;
+	}
 
 	soc = charge_get_display_charge() / 10;
+	/* A lower limit of 0 means no start threshold: top up below upper. */
+	lower = sustain_soc.lower ? sustain_soc.lower : sustain_soc.upper;
 
 	/*
-	 * The sustain range is [lower, upper], inclusive:
+	 * lower and upper act as start and stop charging thresholds:
 	 *
 	 * |------------NORMAL------------+--IDLE--+---DISCHARGE---|
 	 * 0%                           lower    upper          100%
 	 *
-	 * Charge until the SoC reaches upper, then switch to IDLE so the system
-	 * runs from AC and the battery holds its charge. DISCHARGE is only used
-	 * to bring the SoC down to upper when it is above it (e.g. the limit was
-	 * lowered). Charging resumes once the SoC falls below lower.
+	 * When AC is connected or the limits change, only start charging if
+	 * the SoC is below lower; otherwise hold with IDLE so the system runs
+	 * from AC. Once charging, continue up to upper, then hold with IDLE.
+	 * DISCHARGE is only used to bring the SoC down to upper when it is
+	 * above it.
 	 */
-	switch (mode) {
-	case CHARGE_CONTROL_NORMAL:
+	if (sustain_soc_restart) {
+		sustain_soc_restart = 0;
 		if (sustain_soc.upper < soc)
 			mode = CHARGE_CONTROL_DISCHARGE;
-		else if (sustain_soc.upper == soc)
+		else if (lower <= soc)
 			mode = CHARGE_CONTROL_IDLE;
-		break;
-	case CHARGE_CONTROL_IDLE:
-		if (soc < sustain_soc.lower)
+		else
 			mode = CHARGE_CONTROL_NORMAL;
-		else if (sustain_soc.upper < soc)
-			mode = CHARGE_CONTROL_DISCHARGE;
-		break;
-	case CHARGE_CONTROL_DISCHARGE:
-		if (soc <= sustain_soc.upper)
-			mode = CHARGE_CONTROL_IDLE;
-		break;
-	default:
-		return;
+	} else {
+		switch (mode) {
+		case CHARGE_CONTROL_NORMAL:
+			if (sustain_soc.upper < soc)
+				mode = CHARGE_CONTROL_DISCHARGE;
+			else if (sustain_soc.upper == soc)
+				mode = CHARGE_CONTROL_IDLE;
+			break;
+		case CHARGE_CONTROL_IDLE:
+			if (soc < lower)
+				mode = CHARGE_CONTROL_NORMAL;
+			else if (sustain_soc.upper < soc)
+				mode = CHARGE_CONTROL_DISCHARGE;
+			break;
+		case CHARGE_CONTROL_DISCHARGE:
+			if (soc <= sustain_soc.upper)
+				mode = CHARGE_CONTROL_IDLE;
+			break;
+		default:
+			return;
+		}
 	}
 
 	if (mode == get_chg_ctrl_mode())
@@ -1350,6 +1370,9 @@ static int charge_command_charge_control(struct host_cmd_handler_args *args)
 					return EC_RES_UNAVAILABLE;
 				if (rv)
 					return EC_RES_INVALID_PARAM;
+				/* While enabled, the sustainer owns the mode. */
+				if (battery_sustainer_enabled())
+					return EC_RES_SUCCESS;
 			} else {
 				battery_sustainer_disable();
 			}
