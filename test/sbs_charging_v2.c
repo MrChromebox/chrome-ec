@@ -792,6 +792,101 @@ static int test_battery_sustainer(void)
 	return EC_SUCCESS;
 }
 
+static int test_battery_sustainer_start_threshold(void)
+{
+	struct ec_params_charge_control p;
+	int rv;
+
+	test_setup(1);
+
+	p.cmd = EC_CHARGE_CONTROL_CMD_SET;
+	p.mode = CHARGE_CONTROL_NORMAL;
+	p.sustain_soc.lower = 20;
+	p.sustain_soc.upper = 80;
+
+	ccprintf("Test enable with lower < SoC < upper.\n");
+	display_soc = 300;
+	rv = test_send_host_command(EC_CMD_CHARGE_CONTROL, 2,
+				    &p, sizeof(p), NULL, 0);
+	TEST_ASSERT(rv == EC_RES_SUCCESS);
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_IDLE);
+	ccprintf("Pass.\n");
+
+	ccprintf("Test re-sending the same limits while holding.\n");
+	rv = test_send_host_command(EC_CMD_CHARGE_CONTROL, 2,
+				    &p, sizeof(p), NULL, 0);
+	TEST_ASSERT(rv == EC_RES_SUCCESS);
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_IDLE);
+	ccprintf("Pass.\n");
+
+	ccprintf("Test replug AC with lower < SoC < upper.\n");
+	gpio_set_level(GPIO_AC_PRESENT, 0);
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_NORMAL);
+	gpio_set_level(GPIO_AC_PRESENT, 1);
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_IDLE);
+	ccprintf("Pass.\n");
+
+	ccprintf("Test SoC < lower charges up to upper.\n");
+	display_soc = 190;
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_NORMAL);
+	display_soc = 500;
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_NORMAL);
+	ccprintf("Pass.\n");
+
+	ccprintf("Test re-sending the same limits while charging.\n");
+	rv = test_send_host_command(EC_CMD_CHARGE_CONTROL, 2,
+				    &p, sizeof(p), NULL, 0);
+	TEST_ASSERT(rv == EC_RES_SUCCESS);
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_NORMAL);
+	display_soc = 800;
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_IDLE);
+	ccprintf("Pass.\n");
+
+	ccprintf("Test replug AC with SoC < lower.\n");
+	gpio_set_level(GPIO_AC_PRESENT, 0);
+	display_soc = 150;
+	wait_charging_state();
+	gpio_set_level(GPIO_AC_PRESENT, 1);
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_NORMAL);
+	ccprintf("Pass.\n");
+
+	ccprintf("Test lower = 0 tops up below upper.\n");
+	p.sustain_soc.lower = 0;
+	display_soc = 500;
+	rv = test_send_host_command(EC_CMD_CHARGE_CONTROL, 2,
+				    &p, sizeof(p), NULL, 0);
+	TEST_ASSERT(rv == EC_RES_SUCCESS);
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_NORMAL);
+	display_soc = 800;
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_IDLE);
+	display_soc = 790;
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_NORMAL);
+	ccprintf("Pass.\n");
+
+	/* Disable sustainer */
+	p.sustain_soc.lower = -1;
+	p.sustain_soc.upper = -1;
+	rv = test_send_host_command(EC_CMD_CHARGE_CONTROL, 2,
+				    &p, sizeof(p), NULL, 0);
+	TEST_ASSERT(rv == EC_RES_SUCCESS);
+	wait_charging_state();
+	TEST_ASSERT(get_chg_ctrl_mode() == CHARGE_CONTROL_NORMAL);
+
+	return EC_SUCCESS;
+}
+
 void run_test(void)
 {
 	RUN_TEST(test_charge_state);
@@ -804,6 +899,7 @@ void run_test(void)
 	RUN_TEST(test_hc_current_limit);
 	RUN_TEST(test_low_battery_hostevents);
 	RUN_TEST(test_battery_sustainer);
+	RUN_TEST(test_battery_sustainer_start_threshold);
 
 	test_print_result();
 }
