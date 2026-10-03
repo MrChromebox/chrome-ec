@@ -62,4 +62,13 @@ void power_button_pch_pulse(void);
  */
 int64_t get_time_dsw_pwrok(void);
 
+/**
+ * Check whether primary power is going away. Used by After G3 State to tell
+ * a power loss apart from a graceful shutdown on chipsets whose power code
+ * never reports CHIPSET_SHUTDOWN_POWERFAIL. Boards may override.
+ *
+ * @return non-zero if power is failing.
+ */
+int board_is_power_failing(void);
+
 #endif  /* __CROS_EC_POWER_BUTTON_H */

@@ -229,6 +229,33 @@ static inline int ag3s_are_any_non_off_bbram_reset_flags_set(void)
 	return !!(chip_read_reset_flags() & ~AG3S_RESET_FLAG_OFF);
 }
 
+__attribute__((weak)) int board_is_power_failing(void)
+{
+	return 0;
+}
+
+/*
+ * Delay before arming OFF bbram reset flags for "Previous State" after a
+ * shutdown. If power is being lost, the EC browns out before this expires.
+ */
+#define AG3S_ARM_OFF_DELAY (500 * MSEC)
+
+static void ag3s_arm_off_deferred(void)
+{
+	if (ag3s_get_state() != EC_AFTER_G3_STATE_PREVIOUS ||
+	    !chipset_in_state(CHIPSET_STATE_ANY_OFF))
+		return;
+
+	if (board_is_power_failing()) {
+		CPRINTS("%s: Power failing, not arming " AG3S_RESET_FLAG_OFF_NAME,
+			ag3s_title);
+		return;
+	}
+
+	ag3s_update_off_reset_flags(AG3S_RFO_SET_BBRM);
+}
+DECLARE_DEFERRED(ag3s_arm_off_deferred);
+
 enum ag3s_sync_hook {
 	/* Reserved for non-hook sync request. */
 	AG3S_SYNC_HOOK_NONE = -1,
@@ -351,17 +378,28 @@ static void ag3s_sync_on_hook(enum ag3s_sync_hook sync_hook)
 		/* Proper flag sync will be done after power button init. */
 		goto update_off_reset_flags;
 	case AG3S_SYNC_HOOK_CHIPSET_SHUTDOWN:
-		if (state == EC_AFTER_G3_STATE_PREVIOUS &&
-		    chipset_get_shutdown_reason() ==
-		    CHIPSET_SHUTDOWN_POWERFAIL) {
+		if (state == EC_AFTER_G3_STATE_PREVIOUS) {
 			/*
 			 * Skip saving OFF bbram reset flags for "Previous
 			 * State" behavior if shutting down due to power
 			 * failure. This ensures that the device will remain off
 			 * when power is restored only if shutdown was graceful,
 			 * otherwise it will auto power on.
+			 *
+			 * Some chipsets never report a power failure shutdown
+			 * reason, and the EC may stay up long enough to see the
+			 * PCH walk through S3/S5 while power decays. Check the
+			 * board power signals now and again after a delay
+			 * before saving the flags.
 			 */
-			return;
+			if (chipset_get_shutdown_reason() !=
+			    CHIPSET_SHUTDOWN_POWERFAIL &&
+			    !board_is_power_failing())
+				hook_call_deferred(&ag3s_arm_off_deferred_data,
+						   AG3S_ARM_OFF_DELAY);
+
+			rfo_flags = AG3S_RFO_SET_SYS;
+			goto update_off_reset_flags;
 		}
 		break;
 	case AG3S_SYNC_HOOK_SYSJUMP:

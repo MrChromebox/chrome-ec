@@ -483,6 +483,13 @@ static void board_extpower(void)
 }
 DECLARE_HOOK(HOOK_AC_CHANGE, board_extpower, HOOK_PRIO_DEFAULT);
 
+/* RSMRST_L_PGOOD drops in Deep S5, so it can't be used here. */
+int board_is_power_failing(void)
+{
+	return !gpio_get_level(GPIO_AC_PRESENT) ||
+	       !gpio_get_level(GPIO_PMIC_DPWROK);
+}
+
 /* Mapping to the old schematics */
 #define GPIO_U42_P GPIO_TYPE_C_60W
 #define GPIO_U22_C GPIO_TYPE_C_65W
