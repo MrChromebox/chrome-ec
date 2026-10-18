@@ -181,17 +181,18 @@ void sleep_start_suspend(void)
 
 	sleep_signal_transitions = 0;
 
+	/* Host timeout 0 means "use the board default". Apply that before
+	 * the infinite check so CONFIG_SLEEP_TIMEOUT_MS == 0xFFFF disables
+	 * the timer, matching power/host_sleep.c.
+	 */
+	if (timeout == EC_HOST_SLEEP_TIMEOUT_DEFAULT) {
+		timeout = host_sleep_timeout_default;
+	}
+
 	/* Use 0xFFFF to disable the timeout */
 	if (timeout == EC_HOST_SLEEP_TIMEOUT_INFINITE) {
 		sleep_signal_timeout = 0;
 		return;
-	}
-
-	/* Use zero internally to indicate host doesn't set timeout value;
-	 * we will use default timeout.
-	 */
-	if (timeout == EC_HOST_SLEEP_TIMEOUT_DEFAULT) {
-		timeout = host_sleep_timeout_default;
 	}
 
 	sleep_signal_timeout = timeout;

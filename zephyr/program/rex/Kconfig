@@ -36,6 +36,16 @@ config BOARD_HAS_INVALID_CHIP_DEVICE_ID_WORKAROUND
 	  Workaround the board of the Rex family which uses the sample chip
 	  with the incorrect device ID.
 
+config SLEEP_TIMEOUT_MS
+	int "Default host sleep hang timeout (ms); 65535 disables it"
+	default 65535
+	range 0 65535
+	help
+	  Used when the host sends EC_HOST_SLEEP_TIMEOUT_DEFAULT (0).
+	  65535 is EC_HOST_SLEEP_TIMEOUT_INFINITE and does not arm the
+	  S0ix hang timer. Linux and Windows send 0, and s2idle often
+	  exceeds the historical 10s default.
+
 config BOARD_REX_USBC_CONFIG
 	bool "Rex board usbc configuration"
 	default y
