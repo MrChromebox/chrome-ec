@@ -7,6 +7,10 @@
 	status = "okay";
 	pinctrl-0 = <&pwm3_gp80>;
 	pinctrl-names = "default";
+	/* Keep PWM clock alive in EC low-power idle (APB is gated). Same
+	 * approach as jubilant/ruby: LFCLK + 324 Hz on kblight.
+	 */
+	clock-bus = "NPCX_CLOCK_BUS_LFCLK";
 };
 
 &kbd_config_0 {

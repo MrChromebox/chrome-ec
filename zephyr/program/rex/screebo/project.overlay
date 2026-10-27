@@ -250,5 +250,6 @@
 };
 
 &kblight {
-	pwms = <&pwm3 0 PWM_KHZ(25) PWM_POLARITY_NORMAL>;
+	/* 324 Hz from 32.768 kHz LFCLK (see pwm3 clock-bus in keyboard.dtsi). */
+	pwms = <&pwm3 0 PWM_HZ(324) PWM_POLARITY_NORMAL>;
 };
