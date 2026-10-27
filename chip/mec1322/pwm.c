@@ -82,4 +82,5 @@ static void pwm_init(void)
 		pwm_set_duty(i, 0);
 	}
 }
-DECLARE_HOOK(HOOK_INIT, pwm_init, HOOK_PRIO_DEFAULT);
+/* Before pwm_pin_init / pwm_kblight_init (same default prio is LTO-unstable). */
+DECLARE_HOOK(HOOK_INIT, pwm_init, HOOK_PRIO_INIT_PWM);
